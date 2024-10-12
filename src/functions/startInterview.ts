@@ -10,7 +10,6 @@ import jwtMiddleware from "../middlewares/jwtMiddleware";
 import { ResponseUtil } from "../utils/responseUtil";
 import { InterviewService } from "../services/interviewService";
 
-// 在文件顶部添加这个接口定义
 interface StartInterviewRequest {
   userId: string;
   positionName: string;
@@ -67,6 +66,7 @@ async function startInterview(
       positionName,
       resumeUrl
     );
+    console.log(createdInterview);
 
     return ResponseUtil.success({
       message: "面试已开始",
@@ -74,7 +74,7 @@ async function startInterview(
     });
   } catch (error) {
     context.error("开始面试时发生错误", error);
-    return ResponseUtil.error("内部服务器错误", 500);
+    return ResponseUtil.error(error.message, 500);
   }
 }
 

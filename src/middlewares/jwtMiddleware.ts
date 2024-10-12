@@ -40,14 +40,24 @@ const jwtMiddleware = (secret: string) => {
     const token = authHeader.split(" ")[1];
     try {
       const decoded = await validateJwt(token, secret);
+      const currentTimestamp = Math.floor(Date.now() / 1000);
+
+      if (decoded.exp && decoded.exp < currentTimestamp) {
+        context.log(`Token expired for user ${decoded.name}`);
+        return {
+          status: 401,
+          body: "Token has expired.",
+        };
+      }
+
       (context as any).user = decoded;
-      context.log(`User ${decoded.name} authenticated successfully`);
+      context.log(`用户 ${decoded.name} 认证成功`);
       return undefined; // 继续执行后续操作
     } catch (error) {
-      context.log(`Authentication failed: ${error.message}`);
+      context.log(`认证失败: ${error.message}`);
       return {
         status: 401,
-        body: "Invalid token.",
+        body: "无效的token。",
       };
     }
   };

@@ -1,9 +1,10 @@
 import { CosmosClient, Container } from "@azure/cosmos";
 import { DefaultAzureCredential } from "@azure/identity";
+import { UserService } from "./userService";
 
 export class InterviewService {
   private interviewsContainer: Container;
-  private usersContainer: Container;
+  private userService: UserService;
 
   constructor() {
     let cosmosClient: CosmosClient;
@@ -19,7 +20,7 @@ export class InterviewService {
 
     const database = cosmosClient.database("aipilot");
     this.interviewsContainer = database.container("interviews");
-    this.usersContainer = database.container("users");
+    this.userService = new UserService();
   }
 
   async getOngoingInterview(interviewId: string): Promise<any> {
@@ -37,6 +38,7 @@ export class InterviewService {
     const { resources } = await this.interviewsContainer.items
       .query(querySpec)
       .fetchAll();
+    console.log("getOngoingInterviewByUserId:", resources);
     return resources[0];
   }
 
@@ -45,12 +47,13 @@ export class InterviewService {
     positionName: string,
     resumeUrl: string
   ): Promise<any> {
-    // 检查用户是否存在
-    const { resource: user } = await this.usersContainer
-      .item(userId, userId)
-      .read();
+    const user = await this.userService.getUserById(userId);
     if (!user) {
       throw new Error("用户不存在");
+    }
+
+    if (user.credits <= 0) {
+      throw new Error("积分不足，无法开始面试");
     }
 
     const startTime = new Date();
@@ -84,7 +87,9 @@ export class InterviewService {
 
     const endTime = new Date();
     const startTime = new Date(interview.startTime);
-    const duration = endTime.getTime() - startTime.getTime();
+    const duration = Math.ceil(
+      (endTime.getTime() - startTime.getTime()) / 1000
+    ); // 向上取整到秒
 
     const updatedInterview = {
       ...interview,
@@ -96,6 +101,9 @@ export class InterviewService {
     const { resource: endedInterview } = await this.interviewsContainer
       .item(interviewId)
       .replace(updatedInterview);
+
+    // 更新用户积分
+    await this.userService.updateUserCredits(interview.userId, duration);
 
     return endedInterview;
   }
