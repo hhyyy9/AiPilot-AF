@@ -47,7 +47,7 @@ export class UserService {
   }
 
   async getUserById(id: string): Promise<User | undefined> {
-    const { resource: user } = await this.container.item(id, id).read();
+    const { resource: user } = await this.container.item(id).read();
     return user;
   }
 
