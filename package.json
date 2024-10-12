@@ -11,7 +11,9 @@
     "test": "echo \"No tests yet...\""
   },
   "dependencies": {
+    "@azure/cosmos": "^4.1.1",
     "@azure/functions": "^4.0.0",
+    "@azure/identity": "^4.4.1",
     "@azure/openai": "^2.0.0-beta.2",
     "bcrypt": "^5.1.1",
     "jsonwebtoken": "^9.0.2",
