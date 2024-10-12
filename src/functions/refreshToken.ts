@@ -5,6 +5,7 @@ import {
   InvocationContext,
 } from "@azure/functions";
 import * as jwt from "jsonwebtoken";
+import { ResponseUtil } from "../utils/responseUtil";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const REFRESH_SECRET = process.env.REFRESH_SECRET; // 为刷新 token 使用单独的密钥
@@ -23,10 +24,7 @@ async function refreshToken(
   const refreshToken = request.headers.get("x-refresh-token");
 
   if (!refreshToken) {
-    return {
-      status: 400,
-      body: JSON.stringify({ error: "刷新 token 未提供" }),
-    };
+    return ResponseUtil.error("刷新 token 未提供");
   }
 
   try {
@@ -40,29 +38,23 @@ async function refreshToken(
     const accessToken = jwt.sign(
       { sub: decoded.sub, name: decoded.name },
       JWT_SECRET,
-      { expiresIn: "1h" } // 访问 token 有效期为 1 小时
+      { expiresIn: "1h" }
     );
 
     // 创建新的刷新 token
     const newRefreshToken = jwt.sign(
       { sub: decoded.sub, name: decoded.name },
       REFRESH_SECRET,
-      { expiresIn: "7d" } // 刷新 token 有效期为 7 天
+      { expiresIn: "7d" }
     );
 
-    return {
-      status: 200,
-      body: JSON.stringify({
-        accessToken,
-        refreshToken: newRefreshToken,
-      }),
-    };
+    return ResponseUtil.success({
+      accessToken,
+      refreshToken: newRefreshToken,
+    });
   } catch (error) {
     context.log(`刷新 token 失败: ${error.message}`);
-    return {
-      status: 401,
-      body: JSON.stringify({ error: "无效的刷新 token" }),
-    };
+    return ResponseUtil.error("无效的刷新 token", 401);
   }
 }
 
