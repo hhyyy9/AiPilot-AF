@@ -24,7 +24,7 @@ export class InterviewService {
 
   async getOngoingInterview(interviewId: string): Promise<any> {
     const { resource: interview } = await this.interviewsContainer
-      .item(interviewId, interviewId)
+      .item(interviewId)
       .read();
     return interview && interview.state ? interview : null;
   }
@@ -71,7 +71,7 @@ export class InterviewService {
 
   async endInterview(interviewId: string): Promise<any> {
     const { resource: interview } = await this.interviewsContainer
-      .item(interviewId, interviewId)
+      .item(interviewId)
       .read();
 
     if (!interview) {
@@ -94,7 +94,7 @@ export class InterviewService {
     };
 
     const { resource: endedInterview } = await this.interviewsContainer
-      .item(interviewId, interviewId)
+      .item(interviewId)
       .replace(updatedInterview);
 
     return endedInterview;
