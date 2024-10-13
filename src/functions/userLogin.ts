@@ -51,6 +51,7 @@ export async function userLogin(
     });
 
     return ResponseUtil.success({
+      userId: user.id,
       accessToken,
       refreshToken,
     });

@@ -69,7 +69,7 @@ const httpTrigger = async (
 
     const user = await userService.getUserById(ongoingInterview.userId);
     if (!user) {
-      return ResponseUtil.error("用户不存在", 404);
+      return ResponseUtil.error("用户不存在3", 404);
     }
 
     if (user.credits <= 0) {
@@ -104,6 +104,9 @@ const httpTrigger = async (
       })),
       max_tokens: 300,
     });
+
+    // 扣除用户1点积分
+    await userService.updateUserCredits(user.id, 1);
 
     return {
       status: 200,

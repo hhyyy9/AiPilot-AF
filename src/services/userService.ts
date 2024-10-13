@@ -61,22 +61,22 @@ export class UserService {
     userId: string,
     creditsToDeduct: number
   ): Promise<User> {
-    const { resource: user } = await this.container.item(userId).read();
+    const { resource: user } = await this.container.item(userId, userId).read();
     if (!user) {
-      throw new Error("用户不存在");
+      throw new Error("用户不存在1");
     }
 
     user.credits = Math.max(0, user.credits - creditsToDeduct);
     const { resource: updatedUser } = await this.container
-      .item(userId)
+      .item(userId, userId)
       .replace(user);
     return updatedUser;
   }
 
   async resetUserCredits(userId: string): Promise<User> {
-    const { resource: user } = await this.container.item(userId).read();
+    const { resource: user } = await this.container.item(userId, userId).read();
     if (!user) {
-      throw new Error("用户不存在");
+      throw new Error("用户不存在2");
     }
 
     user.credits = 0;

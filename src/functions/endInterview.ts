@@ -39,25 +39,23 @@ async function endInterview(
   }
 
   try {
-    const body = (await request.json()) as { interviewId: string };
-    const { interviewId } = body;
+    const body = (await request.json()) as { userId: string };
+    const { userId } = body;
 
-    if (!interviewId) {
-      return ResponseUtil.error("缺少 interviewId");
+    if (!userId) {
+      return ResponseUtil.error("缺少 userId");
     }
 
-    const endedInterview = await interviewService.endInterview(interviewId);
+    const endedInterview = await interviewService.endInterviewByUserId(userId);
+    if (!endedInterview) {
+      return ResponseUtil.error("没有找到进行中的面试");
+    }
 
     return ResponseUtil.success({
       message: "面试结束",
-      duration: `${endedInterview.duration / 1000} 秒`,
+      duration: `${endedInterview.duration} 分钟`,
     });
   } catch (error) {
-    if (error.message === "面试记录不存在") {
-      return ResponseUtil.error(error.message, 404);
-    } else if (error.message === "该面试已经结束") {
-      return ResponseUtil.error(error.message);
-    }
     context.error("结束面试时发生错误", error);
     return ResponseUtil.error("内部服务器错误", 500);
   }

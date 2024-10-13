@@ -7,7 +7,7 @@ async function interviewMonitorTimer(myTimer: Timer): Promise<void> {
   await interviewMonitorService.checkAndEndInterviews();
 }
 
-app.timer("interviewMonitorTimer", {
-  schedule: "0 0 * * * *",
-  handler: interviewMonitorTimer,
-});
+// app.timer("interviewMonitorTimer", {
+//   schedule: "0 0 * * * *",
+//   handler: interviewMonitorTimer,
+// });

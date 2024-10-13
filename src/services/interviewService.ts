@@ -25,7 +25,7 @@ export class InterviewService {
 
   async getOngoingInterview(interviewId: string): Promise<any> {
     const { resource: interview } = await this.interviewsContainer
-      .item(interviewId)
+      .item(interviewId, interviewId)
       .read();
     return interview && interview.state ? interview : null;
   }
@@ -38,7 +38,7 @@ export class InterviewService {
     const { resources } = await this.interviewsContainer.items
       .query(querySpec)
       .fetchAll();
-    console.log("getOngoingInterviewByUserId:", resources);
+    // console.log("getOngoingInterviewByUserId:", resources);
     return resources[0];
   }
 
@@ -72,38 +72,29 @@ export class InterviewService {
     return createdInterview;
   }
 
-  async endInterview(interviewId: string): Promise<any> {
-    const { resource: interview } = await this.interviewsContainer
-      .item(interviewId)
-      .read();
+  async endInterviewByUserId(userId: string): Promise<any> {
+    const ongoingInterview = await this.getOngoingInterviewByUserId(userId);
 
-    if (!interview) {
-      throw new Error("面试记录不存在");
-    }
-
-    if (!interview.state) {
-      throw new Error("该面试已经结束");
+    if (!ongoingInterview) {
+      throw new Error("没有找到进行中的面试");
     }
 
     const endTime = new Date();
-    const startTime = new Date(interview.startTime);
+    const startTime = new Date(ongoingInterview.startTime);
     const duration = Math.ceil(
-      (endTime.getTime() - startTime.getTime()) / 1000
-    ); // 向上取整到秒
+      (endTime.getTime() - startTime.getTime()) / (1000 * 60)
+    ); // 向上取整到分钟
 
     const updatedInterview = {
-      ...interview,
+      ...ongoingInterview,
       endTime: endTime.toISOString(),
       duration: duration,
       state: false,
     };
 
     const { resource: endedInterview } = await this.interviewsContainer
-      .item(interviewId)
+      .item(ongoingInterview.id, ongoingInterview.id)
       .replace(updatedInterview);
-
-    // 更新用户积分
-    await this.userService.updateUserCredits(interview.userId, duration);
 
     return endedInterview;
   }
