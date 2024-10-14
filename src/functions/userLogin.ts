@@ -40,16 +40,26 @@ export async function userLogin(
     if (!isPasswordValid) {
       return ResponseUtil.error("用户名或密码不正确", 401);
     }
-
+    console.log("user:", user);
     // 生成访问令牌
-    const accessToken = jwt.sign({ username: user.username }, JWT_SECRET, {
-      expiresIn: "1h",
-    });
+    const accessToken = jwt.sign(
+      {
+        sub: user.id, // 添加 sub 字段，值为用户 ID
+        username: user.username,
+      },
+      JWT_SECRET,
+      { expiresIn: "1h" }
+    );
 
     // 生成刷新令牌
-    const refreshToken = jwt.sign({ username: user.username }, REFRESH_SECRET, {
-      expiresIn: "7d",
-    });
+    const refreshToken = jwt.sign(
+      {
+        sub: user.id, // 添加 sub 字段，值为用户 ID
+        username: user.username,
+      },
+      REFRESH_SECRET,
+      { expiresIn: "7d" }
+    );
 
     return ResponseUtil.success({
       userId: user.id,

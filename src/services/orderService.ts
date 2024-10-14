@@ -10,6 +10,7 @@ export interface Order {
   status: "pending" | "completed" | "failed";
   createdAt: Date;
   updatedAt: Date;
+  paymentIntentId?: string;
 }
 
 @injectable()
@@ -61,6 +62,26 @@ export class OrderService {
     }
 
     existingOrder.status = status;
+    existingOrder.updatedAt = new Date();
+
+    const { resource: updatedOrder } = await this.container
+      .item(orderId, orderId)
+      .replace(existingOrder);
+    return updatedOrder;
+  }
+
+  async updateOrderPaymentIntent(
+    orderId: string,
+    paymentIntentId: string
+  ): Promise<Order> {
+    const { resource: existingOrder } = await this.container
+      .item(orderId, orderId)
+      .read();
+    if (!existingOrder) {
+      throw new Error("订单不存在");
+    }
+
+    existingOrder.paymentIntentId = paymentIntentId;
     existingOrder.updatedAt = new Date();
 
     const { resource: updatedOrder } = await this.container

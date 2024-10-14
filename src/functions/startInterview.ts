@@ -1,16 +1,11 @@
-import {
-  app,
-  HttpRequest,
-  HttpResponseInit,
-  InvocationContext,
-} from "@azure/functions";
+import { app, HttpRequest, HttpResponseInit } from "@azure/functions";
 import jwtMiddleware from "../middlewares/jwtMiddleware";
 import { ResponseUtil } from "../utils/responseUtil";
 import { InterviewService } from "../services/interviewService";
 import { container } from "../di/container";
+import { AuthenticatedContext } from "../types/AuthenticatedContext";
 
 interface StartInterviewRequest {
-  userId: string;
   positionName: string;
   resumeUrl: string;
 }
@@ -21,9 +16,8 @@ const interviewService = container.resolve(InterviewService);
 
 async function startInterview(
   request: HttpRequest,
-  context: InvocationContext
+  context: AuthenticatedContext
 ): Promise<HttpResponseInit> {
-  // 应用 JWT 中间件
   const jwtResult = await jwtMiddleware(JWT_SECRET)(context, request);
   if (jwtResult) {
     return jwtResult;
@@ -31,9 +25,10 @@ async function startInterview(
 
   try {
     const body = (await request.json()) as StartInterviewRequest;
-    const { userId, positionName, resumeUrl } = body;
+    const { positionName, resumeUrl } = body;
+    const userId = context.user.sub;
 
-    if (!userId || !positionName || !resumeUrl) {
+    if (!positionName || !resumeUrl) {
       return ResponseUtil.error("缺少必要参数");
     }
 

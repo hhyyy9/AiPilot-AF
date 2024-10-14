@@ -4,10 +4,11 @@ import {
   HttpResponseInit,
 } from "@azure/functions";
 import * as jwt from "jsonwebtoken";
+import { AuthenticatedContext } from "../types/authenticatedContext";
 
 interface DecodedToken {
   sub: string;
-  name: string;
+  username: string;
   iat: number;
   exp: number;
 }
@@ -43,15 +44,31 @@ const jwtMiddleware = (secret: string) => {
       const currentTimestamp = Math.floor(Date.now() / 1000);
 
       if (decoded.exp && decoded.exp < currentTimestamp) {
-        context.log(`Token expired for user ${decoded.name}`);
+        context.log(`Token expired for user ${decoded.username}`);
         return {
           status: 401,
           body: "Token has expired.",
         };
       }
 
-      (context as any).user = decoded;
-      context.log(`用户 ${decoded.name} 认证成功`);
+      (context as AuthenticatedContext).user = {
+        ...decoded,
+        username: decoded.username,
+        sub: decoded.sub,
+      };
+      context.log(
+        `用户认证成功，用户信息:`,
+        JSON.stringify(
+          {
+            sub: decoded.sub,
+            username: decoded.username,
+            iat: decoded.iat,
+            exp: decoded.exp,
+          },
+          null,
+          2
+        )
+      );
       return undefined; // 继续执行后续操作
     } catch (error) {
       context.log(`认证失败: ${error.message}`);

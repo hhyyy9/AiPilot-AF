@@ -19,7 +19,24 @@ export class PaymentService {
     });
   }
 
-  async confirmPayment(paymentIntentId: string): Promise<Stripe.PaymentIntent> {
-    return this.stripe.paymentIntents.confirm(paymentIntentId);
+  async confirmPayment(
+    paymentIntentId: string,
+    paymentMethodId: string,
+    returnUrl: string
+  ): Promise<Stripe.PaymentIntent> {
+    return this.stripe.paymentIntents.confirm(paymentIntentId, {
+      payment_method: paymentMethodId,
+      return_url: returnUrl,
+    });
+  }
+
+  // 新增：创建支付宝支付会话
+  async createAlipaySession(
+    paymentIntentId: string
+  ): Promise<Stripe.PaymentIntent> {
+    return this.stripe.paymentIntents.confirm(paymentIntentId, {
+      payment_method_types: ["alipay"],
+      return_url: process.env.ALIPAY_RETURN_URL, // 设置支付宝回调URL
+    });
   }
 }
