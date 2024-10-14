@@ -1,13 +1,13 @@
 import { app, HttpRequest, HttpResponseInit } from "@azure/functions";
-import { ResponseUtil } from "../utils/responseUtil";
-import { OrderService } from "../services/orderService";
-import { PaymentService } from "../services/paymentService";
-import jwtMiddleware from "../middlewares/jwtMiddleware";
-import { container } from "../di/container";
-import { AuthenticatedContext } from "../types/authenticatedContext";
-
-import { rateLimitMiddleware } from "../middlewares/rateLimitMiddleware";
-import { GENERAL_API_RATE_LIMIT } from "../config/rateLimit";
+import { ResponseUtil } from "../../utils/responseUtil";
+import { OrderService } from "../../services/orderService";
+import { PaymentService } from "../../services/paymentService";
+import jwtMiddleware from "../../middlewares/jwtMiddleware";
+import { container } from "../../di/container";
+import { AuthenticatedContext } from "../../types/authenticatedContext";
+import { ERROR_CODES } from "../../config/errorCodes";
+import { rateLimitMiddleware } from "../../middlewares/rateLimitMiddleware";
+import { GENERAL_API_RATE_LIMIT } from "../../config/rateLimit";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -51,13 +51,21 @@ async function createOrder(
     const { amount, currency } = body;
 
     if (!amount || !currency) {
-      return ResponseUtil.error("金额和货币是必需的");
+      return ResponseUtil.error(
+        "金额和货币是必需的",
+        400,
+        ERROR_CODES.INVALID_INPUT
+      );
     }
 
     // 验证金额是否满足最低要求
     if (amount < 50) {
       // 假设金额以美分为单位
-      return ResponseUtil.error("金额必须至少为 50 美分", 400);
+      return ResponseUtil.error(
+        "金额必须至少为 50 美分",
+        400,
+        ERROR_CODES.INVALID_INPUT
+      );
     }
 
     const userId = context.user.sub;
@@ -111,17 +119,26 @@ async function createOrder(
       error.message === "订单创建失败" ||
       error.message === "更新订单支付意向失败"
     ) {
-      return ResponseUtil.error(error.message, 500);
+      return ResponseUtil.error(
+        error.message,
+        500,
+        ERROR_CODES.INTERNAL_SERVER_ERROR
+      );
     }
     if (error.type === "StripeInvalidRequestError") {
-      return ResponseUtil.error(error.message, 400);
+      return ResponseUtil.error(error.message, 400, ERROR_CODES.INVALID_INPUT);
     }
-    return ResponseUtil.error("内部服务器错误", 500);
+    return ResponseUtil.error(
+      "内部服务器错误",
+      500,
+      ERROR_CODES.INTERNAL_SERVER_ERROR
+    );
   }
 }
 
-app.http("createOrder", {
+export const createOrderFunction = app.http("createOrder", {
   methods: ["POST"],
   authLevel: "anonymous",
+  route: "v1/createOrder",
   handler: createOrder,
 });

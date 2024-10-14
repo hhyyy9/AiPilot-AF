@@ -1,14 +1,14 @@
 import { app, HttpRequest, HttpResponseInit } from "@azure/functions";
-import { PaymentService } from "../services/paymentService";
-import { UserService } from "../services/userService";
-import { OrderService } from "../services/orderService";
-import { ResponseUtil } from "../utils/responseUtil";
-import jwtMiddleware from "../middlewares/jwtMiddleware";
-import { container } from "../di/container";
-import { AuthenticatedContext } from "../types/authenticatedContext";
-
-import { rateLimitMiddleware } from "../middlewares/rateLimitMiddleware";
-import { GENERAL_API_RATE_LIMIT } from "../config/rateLimit";
+import { PaymentService } from "../../services/paymentService";
+import { UserService } from "../../services/userService";
+import { OrderService } from "../../services/orderService";
+import { ResponseUtil } from "../../utils/responseUtil";
+import jwtMiddleware from "../../middlewares/jwtMiddleware";
+import { container } from "../../di/container";
+import { AuthenticatedContext } from "../../types/authenticatedContext";
+import { ERROR_CODES } from "../../config/errorCodes";
+import { rateLimitMiddleware } from "../../middlewares/rateLimitMiddleware";
+import { GENERAL_API_RATE_LIMIT } from "../../config/rateLimit";
 
 const paymentService = container.resolve(PaymentService);
 const userService = container.resolve(UserService);
@@ -56,24 +56,36 @@ async function confirmPayment(
 
     const order = await orderService.getOrderById(orderId);
     if (!order) {
-      return ResponseUtil.error("订单不存在", 404);
+      return ResponseUtil.error("订单不存在", 404, ERROR_CODES.NOT_FOUND);
     }
 
     if (order.userId !== userId) {
-      return ResponseUtil.error("无权访问此订单", 403);
+      return ResponseUtil.error("无权访问此订单", 403, ERROR_CODES.FORBIDDEN);
     }
 
     if (!order.paymentIntentId) {
-      return ResponseUtil.error("此订单没有关联的支付意向", 400);
+      return ResponseUtil.error(
+        "此订单没有关联的支付意向",
+        400,
+        ERROR_CODES.INVALID_INPUT
+      );
     }
 
     // 检查订单状态
     if (order.status === "completed") {
-      return ResponseUtil.error("订单已经支付成功，请不要重复支付", 400);
+      return ResponseUtil.error(
+        "订单已经支付成功，请不要重复支付",
+        400,
+        ERROR_CODES.INVALID_INPUT
+      );
     }
 
     if (order.status === "failed") {
-      return ResponseUtil.error("订单支付已失败，请重新创建订单", 400);
+      return ResponseUtil.error(
+        "订单支付已失败，请重新创建订单",
+        400,
+        ERROR_CODES.INVALID_INPUT
+      );
     }
 
     const paymentIntent = await paymentService.confirmPayment(
@@ -98,7 +110,7 @@ async function confirmPayment(
       });
     } else {
       await orderService.updateOrderStatus(orderId, "failed");
-      return ResponseUtil.error("支付未成功", 400);
+      return ResponseUtil.error("支付未成功", 400, ERROR_CODES.PAYMENT_FAILED);
     }
   } catch (error) {
     context.error("确认支付时发生错误", error);
@@ -106,8 +118,9 @@ async function confirmPayment(
   }
 }
 
-app.http("confirmPayment", {
+export const confirmPaymentFunction = app.http("confirmPayment", {
   methods: ["POST"],
   authLevel: "anonymous",
+  route: "v1/confirmPayment",
   handler: confirmPayment,
 });

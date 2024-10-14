@@ -1,4 +1,5 @@
 import { HttpResponseInit } from "@azure/functions";
+import { ERROR_CODES } from "../config/errorCodes";
 
 interface ApiResponse<T> {
   success: boolean;
@@ -26,7 +27,7 @@ export class ResponseUtil {
   static error(
     message: string,
     status: number = 400,
-    code?: string
+    code: string = ERROR_CODES.INTERNAL_SERVER_ERROR
   ): HttpResponseInit {
     const response: ApiResponse<null> = {
       success: false,

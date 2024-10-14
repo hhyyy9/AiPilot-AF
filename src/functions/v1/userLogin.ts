@@ -5,9 +5,10 @@ import {
   InvocationContext,
 } from "@azure/functions";
 import * as jwt from "jsonwebtoken";
-import { ResponseUtil } from "../utils/responseUtil";
-import { UserService } from "../services/userService";
-import { container } from "../di/container";
+import { ResponseUtil } from "../../utils/responseUtil";
+import { UserService } from "../../services/userService";
+import { container } from "../../di/container";
+import { ERROR_CODES } from "../../config/errorCodes";
 
 const userService = container.resolve(UserService);
 
@@ -56,7 +57,7 @@ interface LoginRequest {
  *       401:
  *         description: 用户名或密码不正确
  */
-export async function userLogin(
+async function userLogin(
   request: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
@@ -65,17 +66,29 @@ export async function userLogin(
     const { username, password } = body;
 
     if (!username || !password) {
-      return ResponseUtil.error("用户名和密码是必需的");
+      return ResponseUtil.error(
+        "用户名和密码是必需的",
+        400,
+        ERROR_CODES.INVALID_INPUT
+      );
     }
 
     const user = await userService.getUserByUsername(username);
     if (!user) {
-      return ResponseUtil.error("用户名或密码不正确", 401);
+      return ResponseUtil.error(
+        "用户名或密码不正确",
+        401,
+        ERROR_CODES.INVALID_CREDENTIALS
+      );
     }
 
     const isPasswordValid = await userService.validatePassword(user, password);
     if (!isPasswordValid) {
-      return ResponseUtil.error("用户名或密码不正确", 401);
+      return ResponseUtil.error(
+        "用户名或密码不正确",
+        401,
+        ERROR_CODES.INVALID_CREDENTIALS
+      );
     }
     console.log("user:", user);
     // 生成访问令牌
@@ -105,12 +118,17 @@ export async function userLogin(
     });
   } catch (error) {
     context.error("登录时发生错误", error);
-    return ResponseUtil.error("内部服务器错误", 500);
+    return ResponseUtil.error(
+      "内部服务器错误",
+      500,
+      ERROR_CODES.INTERNAL_SERVER_ERROR
+    );
   }
 }
 
-app.http("userLogin", {
+export const userLoginFunction = app.http("userLogin", {
   methods: ["POST"],
   authLevel: "anonymous",
+  route: "v1/userLogin",
   handler: userLogin,
 });

@@ -5,10 +5,10 @@ import {
   InvocationContext,
 } from "@azure/functions";
 import * as jwt from "jsonwebtoken";
-import { ResponseUtil } from "../utils/responseUtil";
-
-import { rateLimitMiddleware } from "../middlewares/rateLimitMiddleware";
-import { GENERAL_API_RATE_LIMIT } from "../config/rateLimit";
+import { ResponseUtil } from "../../utils/responseUtil";
+import { ERROR_CODES } from "../../config/errorCodes";
+import { rateLimitMiddleware } from "../../middlewares/rateLimitMiddleware";
+import { GENERAL_API_RATE_LIMIT } from "../../config/rateLimit";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const REFRESH_SECRET = process.env.REFRESH_SECRET; // 为刷新 token 使用单独的密钥
@@ -37,7 +37,11 @@ async function refreshToken(
   const refreshToken = request.headers.get("x-refresh-token");
 
   if (!refreshToken) {
-    return ResponseUtil.error("刷新 token 未提供");
+    return ResponseUtil.error(
+      "刷新 token 未提供",
+      400,
+      ERROR_CODES.INVALID_INPUT
+    );
   }
 
   // 然后应用速率限制
@@ -75,12 +79,17 @@ async function refreshToken(
     });
   } catch (error) {
     context.log(`刷新 token 失败: ${error.message}`);
-    return ResponseUtil.error("无效的刷新 token", 401);
+    return ResponseUtil.error(
+      "无效的刷新 token",
+      401,
+      ERROR_CODES.UNAUTHORIZED
+    );
   }
 }
 
-app.http("refreshToken", {
+export const refreshTokenFunction = app.http("refreshToken", {
   methods: ["POST"],
   authLevel: "anonymous",
+  route: "v1/refreshToken",
   handler: refreshToken,
 });

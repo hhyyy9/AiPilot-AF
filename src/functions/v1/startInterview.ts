@@ -1,12 +1,12 @@
 import { app, HttpRequest, HttpResponseInit } from "@azure/functions";
-import jwtMiddleware from "../middlewares/jwtMiddleware";
-import { ResponseUtil } from "../utils/responseUtil";
-import { InterviewService } from "../services/interviewService";
-import { container } from "../di/container";
-import { AuthenticatedContext } from "../types/authenticatedContext";
-
-import { rateLimitMiddleware } from "../middlewares/rateLimitMiddleware";
-import { GENERAL_API_RATE_LIMIT } from "../config/rateLimit";
+import jwtMiddleware from "../../middlewares/jwtMiddleware";
+import { ResponseUtil } from "../../utils/responseUtil";
+import { InterviewService } from "../../services/interviewService";
+import { container } from "../../di/container";
+import { AuthenticatedContext } from "../../types/authenticatedContext";
+import { ERROR_CODES } from "../../config/errorCodes";
+import { rateLimitMiddleware } from "../../middlewares/rateLimitMiddleware";
+import { GENERAL_API_RATE_LIMIT } from "../../config/rateLimit";
 
 interface StartInterviewRequest {
   positionName: string;
@@ -50,7 +50,7 @@ async function startInterview(
     const userId = context.user.sub;
 
     if (!positionName || !resumeUrl) {
-      return ResponseUtil.error("缺少必要参数");
+      return ResponseUtil.error("缺少必要参数", 400, ERROR_CODES.INVALID_INPUT);
     }
 
     const ongoingInterview = await interviewService.getOngoingInterviewByUserId(
@@ -58,7 +58,9 @@ async function startInterview(
     );
     if (ongoingInterview) {
       return ResponseUtil.error(
-        "您已有一个正在进行的面试，请先结束当前面试再开始新的面试"
+        "您已有一个正在进行的面试，请先结束当前面试再开始新的面试",
+        400,
+        ERROR_CODES.INTERVIEW_ALREADY_STARTED
       );
     }
 
@@ -75,12 +77,17 @@ async function startInterview(
     });
   } catch (error) {
     context.error("开始面试时发生错误", error);
-    return ResponseUtil.error(error.message, 500);
+    return ResponseUtil.error(
+      error.message,
+      500,
+      ERROR_CODES.INTERNAL_SERVER_ERROR
+    );
   }
 }
 
-app.http("startInterview", {
+export const startInterviewFunction = app.http("startInterview", {
   methods: ["POST"],
   authLevel: "anonymous",
+  route: "v1/startInterview",
   handler: startInterview,
 });

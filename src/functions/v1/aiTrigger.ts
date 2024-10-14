@@ -5,11 +5,12 @@ import {
   InvocationContext,
 } from "@azure/functions";
 import OpenAI from "openai";
-import jwtMiddleware from "../middlewares/jwtMiddleware";
-import { ResponseUtil } from "../utils/responseUtil";
-import { InterviewService } from "../services/interviewService";
-import { UserService } from "../services/userService";
-import { container } from "../di/container";
+import jwtMiddleware from "../../middlewares/jwtMiddleware";
+import { ResponseUtil } from "../../utils/responseUtil";
+import { InterviewService } from "../../services/interviewService";
+import { UserService } from "../../services/userService";
+import { container } from "../../di/container";
+import { ERROR_CODES } from "../../config/errorCodes";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -57,23 +58,35 @@ const httpTrigger = async (
     const { interviewId, jobPosition, prompt, language, resumeContent } = body;
 
     if (!interviewId) {
-      return ResponseUtil.error("缺少 interviewId", 400);
+      return ResponseUtil.error(
+        "缺少 interviewId",
+        400,
+        ERROR_CODES.INVALID_INPUT
+      );
     }
 
     const ongoingInterview = await interviewService.getOngoingInterview(
       interviewId
     );
     if (!ongoingInterview) {
-      return ResponseUtil.error("当前没有正在进行的面试", 400);
+      return ResponseUtil.error(
+        "当前没有正在进行的面试",
+        400,
+        ERROR_CODES.INTERVIEW_NOT_FOUND
+      );
     }
 
     const user = await userService.getUserById(ongoingInterview.userId);
     if (!user) {
-      return ResponseUtil.error("用户不存在", 404);
+      return ResponseUtil.error("用户不存在", 404, ERROR_CODES.USER_NOT_FOUND);
     }
 
     if (user.credits <= 0) {
-      return ResponseUtil.error("积分不足，无法继续面试", 403);
+      return ResponseUtil.error(
+        "积分不足，无法继续面试",
+        403,
+        ERROR_CODES.INSUFFICIENT_CREDITS
+      );
     }
 
     const messages = [
@@ -114,12 +127,17 @@ const httpTrigger = async (
     });
   } catch (error) {
     context.error("处理请求时发生错误", error);
-    return ResponseUtil.error("内部服务器错误", 500);
+    return ResponseUtil.error(
+      "内部服务器错误",
+      500,
+      ERROR_CODES.INTERNAL_SERVER_ERROR
+    );
   }
 };
 
-app.http("aiTrigger", {
+export const aiTriggerFunction = app.http("aiTrigger", {
   methods: ["POST"],
   authLevel: "anonymous",
+  route: "v1/aiTrigger",
   handler: httpTrigger,
 });

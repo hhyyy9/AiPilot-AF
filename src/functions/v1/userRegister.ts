@@ -4,9 +4,10 @@ import {
   HttpResponseInit,
   InvocationContext,
 } from "@azure/functions";
-import { ResponseUtil } from "../utils/responseUtil";
-import { UserService } from "../services/userService";
-import { container } from "../di/container";
+import { ResponseUtil } from "../../utils/responseUtil";
+import { UserService } from "../../services/userService";
+import { container } from "../../di/container";
+import { ERROR_CODES } from "../../config/errorCodes";
 
 const userService = container.resolve(UserService);
 
@@ -25,7 +26,7 @@ interface RegisterRequest {
  *       required: true
  *       content:
  */
-export async function userRegister(
+async function userRegister(
   request: HttpRequest,
   context: InvocationContext
 ): Promise<HttpResponseInit> {
@@ -35,11 +36,19 @@ export async function userRegister(
 
     const existingUser = await userService.getUserByUsername(username);
     if (existingUser) {
-      return ResponseUtil.error("用户名已存在", 409);
+      return ResponseUtil.error(
+        "用户名已存在",
+        409,
+        ERROR_CODES.USERNAME_ALREADY_EXISTS
+      );
     }
 
     if (!username || !password) {
-      return ResponseUtil.error("用户名和密码是必需的");
+      return ResponseUtil.error(
+        "用户名和密码是必需的",
+        400,
+        ERROR_CODES.INVALID_INPUT
+      );
     }
 
     await userService.createUser(username, password);
@@ -47,12 +56,17 @@ export async function userRegister(
     return ResponseUtil.success({ message: "用户注册成功" }, 201);
   } catch (error) {
     context.error("注册用户时发生错误", error);
-    return ResponseUtil.error("内部服务器错误", 500);
+    return ResponseUtil.error(
+      "内部服务器错误",
+      500,
+      ERROR_CODES.INTERNAL_SERVER_ERROR
+    );
   }
 }
 
-app.http("userRegister", {
+export const userRegisterFunction = app.http("userRegister", {
   methods: ["POST"],
   authLevel: "anonymous",
+  route: "v1/userRegister",
   handler: userRegister,
 });

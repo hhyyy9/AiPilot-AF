@@ -1,6 +1,6 @@
 import { app, Timer } from "@azure/functions";
-import { container } from "../di/container";
-import { InterviewMonitorService } from "../services/interviewMonitorService";
+import { container } from "../../di/container";
+import { InterviewMonitorService } from "../../services/interviewMonitorService";
 
 const interviewMonitorService = container.resolve(InterviewMonitorService);
 
