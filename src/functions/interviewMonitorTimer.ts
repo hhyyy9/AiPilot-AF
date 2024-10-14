@@ -1,7 +1,8 @@
 import { app, Timer } from "@azure/functions";
+import { container } from "../di/container";
 import { InterviewMonitorService } from "../services/interviewMonitorService";
 
-const interviewMonitorService = new InterviewMonitorService();
+const interviewMonitorService = container.resolve(InterviewMonitorService);
 
 async function interviewMonitorTimer(myTimer: Timer): Promise<void> {
   await interviewMonitorService.checkAndEndInterviews();

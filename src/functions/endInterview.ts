@@ -4,29 +4,14 @@ import {
   HttpResponseInit,
   InvocationContext,
 } from "@azure/functions";
-import { CosmosClient } from "@azure/cosmos";
-import { DefaultAzureCredential } from "@azure/identity";
 import jwtMiddleware from "../middlewares/jwtMiddleware";
 import { ResponseUtil } from "../utils/responseUtil";
 import { InterviewService } from "../services/interviewService";
-
-let cosmosClient: CosmosClient;
-if (process.env.NODE_ENV === "development") {
-  cosmosClient = new CosmosClient(process.env.COSMOS_CONNECTION_STRING);
-} else {
-  const credential = new DefaultAzureCredential();
-  cosmosClient = new CosmosClient({
-    endpoint: process.env.COSMOS_ENDPOINT,
-    aadCredentials: credential,
-  });
-}
-
-const database = cosmosClient.database("aipilot");
-const interviewsContainer = database.container("interviews");
+import { container } from "../di/container";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-const interviewService = new InterviewService();
+const interviewService = container.resolve(InterviewService);
 
 async function endInterview(
   request: HttpRequest,

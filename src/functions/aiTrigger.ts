@@ -7,10 +7,9 @@ import {
 import OpenAI from "openai";
 import jwtMiddleware from "../middlewares/jwtMiddleware";
 import { ResponseUtil } from "../utils/responseUtil";
-import { CosmosClient } from "@azure/cosmos";
-import { DefaultAzureCredential } from "@azure/identity";
 import { InterviewService } from "../services/interviewService";
 import { UserService } from "../services/userService";
+import { container } from "../di/container";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -20,19 +19,8 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true,
 });
 
-let cosmosClient: CosmosClient;
-if (process.env.NODE_ENV === "development") {
-  cosmosClient = new CosmosClient(process.env.COSMOS_CONNECTION_STRING);
-} else {
-  const credential = new DefaultAzureCredential();
-  cosmosClient = new CosmosClient({
-    endpoint: process.env.COSMOS_ENDPOINT,
-    aadCredentials: credential,
-  });
-}
-
-const interviewService = new InterviewService();
-const userService = new UserService();
+const interviewService = container.resolve(InterviewService);
+const userService = container.resolve(UserService);
 
 interface RequestBody {
   interviewId: string;
@@ -69,7 +57,7 @@ const httpTrigger = async (
 
     const user = await userService.getUserById(ongoingInterview.userId);
     if (!user) {
-      return ResponseUtil.error("用户不存在3", 404);
+      return ResponseUtil.error("用户不存在", 404);
     }
 
     if (user.credits <= 0) {
@@ -106,18 +94,12 @@ const httpTrigger = async (
     });
 
     // 扣除用户1点积分
-    await userService.updateUserCredits(user.id, 1);
+    const updatedUser = await userService.reduceUserCredits(user.id, 1);
 
-    return {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        response: response.choices[0].message.content,
-        remainingCredits: user.credits - 1,
-      }),
-    };
+    return ResponseUtil.success({
+      response: response.choices[0].message.content,
+      remainingCredits: updatedUser.credits,
+    });
   } catch (error) {
     context.error("处理请求时发生错误", error);
     return ResponseUtil.error("内部服务器错误", 500);

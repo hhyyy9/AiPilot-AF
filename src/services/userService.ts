@@ -1,6 +1,7 @@
-import { CosmosClient, Container } from "@azure/cosmos";
-import { DefaultAzureCredential } from "@azure/identity";
+import { Container } from "@azure/cosmos";
 import * as bcrypt from "bcrypt";
+import { injectable, inject } from "tsyringe";
+import { DatabaseService } from "./databaseService";
 
 export interface User {
   id?: string;
@@ -9,23 +10,14 @@ export interface User {
   credits: number;
 }
 
+@injectable()
 export class UserService {
   private container: Container;
 
-  constructor() {
-    let cosmosClient: CosmosClient;
-    if (process.env.NODE_ENV === "development") {
-      cosmosClient = new CosmosClient(process.env.COSMOS_CONNECTION_STRING);
-    } else {
-      const credential = new DefaultAzureCredential();
-      cosmosClient = new CosmosClient({
-        endpoint: process.env.COSMOS_ENDPOINT,
-        aadCredentials: credential,
-      });
-    }
-
-    const database = cosmosClient.database("aipilot");
-    this.container = database.container("users");
+  constructor(
+    @inject(DatabaseService) private databaseService: DatabaseService
+  ) {
+    this.container = this.databaseService.getContainer("users");
   }
 
   async createUser(username: string, password: string): Promise<User> {
@@ -57,7 +49,7 @@ export class UserService {
     return bcrypt.compare(password, user.password);
   }
 
-  async updateUserCredits(
+  async reduceUserCredits(
     userId: string,
     creditsToDeduct: number
   ): Promise<User> {
@@ -82,6 +74,19 @@ export class UserService {
     user.credits = 0;
     const { resource: updatedUser } = await this.container
       .item(userId)
+      .replace(user);
+    return updatedUser;
+  }
+
+  async addCredits(userId: string, credits: number): Promise<User> {
+    const { resource: user } = await this.container.item(userId, userId).read();
+    if (!user) {
+      throw new Error("用户不存在");
+    }
+
+    user.credits += credits;
+    const { resource: updatedUser } = await this.container
+      .item(userId, userId)
       .replace(user);
     return updatedUser;
   }

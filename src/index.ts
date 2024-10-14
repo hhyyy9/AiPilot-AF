@@ -1,5 +1,6 @@
-import { app } from '@azure/functions';
+import "reflect-metadata";
+import { app } from "@azure/functions";
 
 app.setup({
-    enableHttpStream: true,
+  enableHttpStream: true,
 });

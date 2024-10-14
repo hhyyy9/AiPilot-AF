@@ -1,26 +1,17 @@
-import { CosmosClient, Container } from "@azure/cosmos";
-import { DefaultAzureCredential } from "@azure/identity";
+import { Container } from "@azure/cosmos";
+import { injectable, inject } from "tsyringe";
+import { DatabaseService } from "./databaseService";
 import { UserService } from "./userService";
 
+@injectable()
 export class InterviewService {
   private interviewsContainer: Container;
-  private userService: UserService;
 
-  constructor() {
-    let cosmosClient: CosmosClient;
-    if (process.env.NODE_ENV === "development") {
-      cosmosClient = new CosmosClient(process.env.COSMOS_CONNECTION_STRING);
-    } else {
-      const credential = new DefaultAzureCredential();
-      cosmosClient = new CosmosClient({
-        endpoint: process.env.COSMOS_ENDPOINT,
-        aadCredentials: credential,
-      });
-    }
-
-    const database = cosmosClient.database("aipilot");
-    this.interviewsContainer = database.container("interviews");
-    this.userService = new UserService();
+  constructor(
+    @inject(DatabaseService) private databaseService: DatabaseService,
+    @inject(UserService) private userService: UserService
+  ) {
+    this.interviewsContainer = this.databaseService.getContainer("interviews");
   }
 
   async getOngoingInterview(interviewId: string): Promise<any> {

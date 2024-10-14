@@ -7,8 +7,9 @@ import {
 import * as jwt from "jsonwebtoken";
 import { ResponseUtil } from "../utils/responseUtil";
 import { UserService } from "../services/userService";
+import { container } from "../di/container";
 
-const userService = new UserService();
+const userService = container.resolve(UserService);
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const REFRESH_SECRET = process.env.REFRESH_SECRET;

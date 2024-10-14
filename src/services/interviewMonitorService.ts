@@ -1,29 +1,19 @@
-import { CosmosClient, Container } from "@azure/cosmos";
-import { DefaultAzureCredential } from "@azure/identity";
+import { Container } from "@azure/cosmos";
+import { injectable, inject } from "tsyringe";
+import { DatabaseService } from "./databaseService";
 import { InterviewService } from "./interviewService";
 import { UserService } from "./userService";
 
+@injectable()
 export class InterviewMonitorService {
   private interviewsContainer: Container;
-  private interviewService: InterviewService;
-  private userService: UserService;
 
-  constructor() {
-    let cosmosClient: CosmosClient;
-    if (process.env.NODE_ENV === "development") {
-      cosmosClient = new CosmosClient(process.env.COSMOS_CONNECTION_STRING);
-    } else {
-      const credential = new DefaultAzureCredential();
-      cosmosClient = new CosmosClient({
-        endpoint: process.env.COSMOS_ENDPOINT,
-        aadCredentials: credential,
-      });
-    }
-
-    const database = cosmosClient.database("aipilot");
-    this.interviewsContainer = database.container("interviews");
-    this.interviewService = new InterviewService();
-    this.userService = new UserService();
+  constructor(
+    @inject(DatabaseService) private databaseService: DatabaseService,
+    @inject(InterviewService) private interviewService: InterviewService,
+    @inject(UserService) private userService: UserService
+  ) {
+    this.interviewsContainer = this.databaseService.getContainer("interviews");
   }
 
   async checkAndEndInterviews(): Promise<void> {
@@ -46,7 +36,7 @@ export class InterviewMonitorService {
         // 将用户积分扣为0
         await this.userService.resetUserCredits(user.id);
         console.log(`用户 ${user.id} 的积分已扣为0`);
-        await this.interviewService.endInterview(interview.id);
+        await this.interviewService.endInterviewByUserId(user.id);
       }
     }
   }

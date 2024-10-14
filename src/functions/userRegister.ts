@@ -6,8 +6,9 @@ import {
 } from "@azure/functions";
 import { ResponseUtil } from "../utils/responseUtil";
 import { UserService } from "../services/userService";
+import { container } from "../di/container";
 
-const userService = new UserService();
+const userService = container.resolve(UserService);
 
 interface RegisterRequest {
   username: string;
