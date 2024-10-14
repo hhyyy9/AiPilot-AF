@@ -19,6 +19,43 @@ interface LoginRequest {
   password: string;
 }
 
+/**
+ * @swagger
+ * /login:
+ *   post:
+ *     summary: 用户登录
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: 登录成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 userId:
+ *                   type: string
+ *                 accessToken:
+ *                   type: string
+ *                 refreshToken:
+ *                   type: string
+ *       401:
+ *         description: 用户名或密码不正确
+ */
 export async function userLogin(
   request: HttpRequest,
   context: InvocationContext

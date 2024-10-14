@@ -7,6 +7,9 @@ import jwtMiddleware from "../middlewares/jwtMiddleware";
 import { container } from "../di/container";
 import { AuthenticatedContext } from "../types/authenticatedContext";
 
+import { rateLimitMiddleware } from "../middlewares/rateLimitMiddleware";
+import { GENERAL_API_RATE_LIMIT } from "../config/rateLimit";
+
 const paymentService = container.resolve(PaymentService);
 const userService = container.resolve(UserService);
 const orderService = container.resolve(OrderService);
@@ -19,6 +22,16 @@ interface ConfirmPaymentRequest {
   returnUrl: string;
 }
 
+/**
+ * @swagger
+ * /confirmPayment:
+ *   post:
+ *     summary: 确认支付
+ *     tags: [Payment]
+ *     requestBody:
+ *       required: true
+ *       content:
+ **/
 async function confirmPayment(
   request: HttpRequest,
   context: AuthenticatedContext
@@ -26,6 +39,14 @@ async function confirmPayment(
   const jwtResult = await jwtMiddleware(JWT_SECRET)(context, request);
   if (jwtResult) {
     return jwtResult;
+  }
+
+  // 然后应用速率限制
+  const rateLimit = rateLimitMiddleware(GENERAL_API_RATE_LIMIT);
+  const rateLimitResult = await rateLimit(context, request);
+  console.log("rateLimitResult:", rateLimitResult);
+  if (rateLimitResult) {
+    return rateLimitResult;
   }
 
   try {

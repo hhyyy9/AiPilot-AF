@@ -7,6 +7,9 @@ import {
 import * as jwt from "jsonwebtoken";
 import { ResponseUtil } from "../utils/responseUtil";
 
+import { rateLimitMiddleware } from "../middlewares/rateLimitMiddleware";
+import { GENERAL_API_RATE_LIMIT } from "../config/rateLimit";
+
 const JWT_SECRET = process.env.JWT_SECRET;
 const REFRESH_SECRET = process.env.REFRESH_SECRET; // 为刷新 token 使用单独的密钥
 
@@ -17,6 +20,16 @@ interface RefreshTokenPayload {
   exp: number;
 }
 
+/**
+ * @swagger
+ * /refreshToken:
+ *   post:
+ *     summary: 刷新 token
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ */
 async function refreshToken(
   request: HttpRequest,
   context: InvocationContext
@@ -25,6 +38,14 @@ async function refreshToken(
 
   if (!refreshToken) {
     return ResponseUtil.error("刷新 token 未提供");
+  }
+
+  // 然后应用速率限制
+  const rateLimit = rateLimitMiddleware(GENERAL_API_RATE_LIMIT);
+  const rateLimitResult = await rateLimit(context, request);
+  console.log("rateLimitResult:", rateLimitResult);
+  if (rateLimitResult) {
+    return rateLimitResult;
   }
 
   try {

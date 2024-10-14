@@ -6,6 +6,9 @@ import jwtMiddleware from "../middlewares/jwtMiddleware";
 import { container } from "../di/container";
 import { AuthenticatedContext } from "../types/authenticatedContext";
 
+import { rateLimitMiddleware } from "../middlewares/rateLimitMiddleware";
+import { GENERAL_API_RATE_LIMIT } from "../config/rateLimit";
+
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const orderService = container.resolve(OrderService);
@@ -16,6 +19,16 @@ interface CreateOrderRequest {
   currency: string;
 }
 
+/**
+ * @swagger
+ * /createOrder:
+ *   post:
+ *     summary: 创建订单
+ *     tags: [Order]
+ *     requestBody:
+ *       required: true
+ *       content:
+ */
 async function createOrder(
   request: HttpRequest,
   context: AuthenticatedContext
@@ -23,6 +36,14 @@ async function createOrder(
   const jwtResult = await jwtMiddleware(JWT_SECRET)(context, request);
   if (jwtResult) {
     return jwtResult;
+  }
+
+  // 然后应用速率限制
+  const rateLimit = rateLimitMiddleware(GENERAL_API_RATE_LIMIT);
+  const rateLimitResult = await rateLimit(context, request);
+  console.log("rateLimitResult:", rateLimitResult);
+  if (rateLimitResult) {
+    return rateLimitResult;
   }
 
   try {

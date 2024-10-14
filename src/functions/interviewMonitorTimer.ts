@@ -4,6 +4,16 @@ import { InterviewMonitorService } from "../services/interviewMonitorService";
 
 const interviewMonitorService = container.resolve(InterviewMonitorService);
 
+/**
+ * @swagger
+ * /interviewMonitorTimer:
+ *   post:
+ *     summary: 面试监控定时器
+ *     tags: [Interview]
+ *     requestBody:
+ *       required: true
+ *       content:
+ */
 async function interviewMonitorTimer(myTimer: Timer): Promise<void> {
   await interviewMonitorService.checkAndEndInterviews();
 }

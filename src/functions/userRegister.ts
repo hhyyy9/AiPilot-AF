@@ -15,6 +15,16 @@ interface RegisterRequest {
   password: string;
 }
 
+/**
+ * @swagger
+ * /userRegister:
+ *   post:
+ *     summary: 用户注册
+ *     tags: [User]
+ *     requestBody:
+ *       required: true
+ *       content:
+ */
 export async function userRegister(
   request: HttpRequest,
   context: InvocationContext

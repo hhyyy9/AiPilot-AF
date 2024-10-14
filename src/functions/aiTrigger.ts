@@ -30,6 +30,18 @@ interface RequestBody {
   resumeContent: string;
 }
 
+/**
+ * @swagger
+ * /aiTrigger:
+ *   post:
+ *     summary: 触发 AI 回答
+ *     tags: [AI]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *
+ */
 const httpTrigger = async (
   request: HttpRequest,
   context: InvocationContext

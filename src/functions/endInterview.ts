@@ -9,10 +9,23 @@ import { ResponseUtil } from "../utils/responseUtil";
 import { InterviewService } from "../services/interviewService";
 import { container } from "../di/container";
 
+import { rateLimitMiddleware } from "../middlewares/rateLimitMiddleware";
+import { GENERAL_API_RATE_LIMIT } from "../config/rateLimit";
+
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const interviewService = container.resolve(InterviewService);
 
+/**
+ * @swagger
+ * /endInterview:
+ *   post:
+ *     summary: 结束面试
+ *     tags: [Interview]
+ *     requestBody:
+ *       required: true
+ *       content:
+ */
 async function endInterview(
   request: HttpRequest,
   context: InvocationContext
@@ -21,6 +34,14 @@ async function endInterview(
   const jwtResult = await jwtMiddleware(JWT_SECRET)(context, request);
   if (jwtResult) {
     return jwtResult;
+  }
+
+  // 然后应用速率限制
+  const rateLimit = rateLimitMiddleware(GENERAL_API_RATE_LIMIT);
+  const rateLimitResult = await rateLimit(context, request);
+  console.log("rateLimitResult:", rateLimitResult);
+  if (rateLimitResult) {
+    return rateLimitResult;
   }
 
   try {

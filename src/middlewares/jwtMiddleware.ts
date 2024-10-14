@@ -30,6 +30,7 @@ const jwtMiddleware = (secret: string) => {
     context: InvocationContext,
     req: HttpRequest
   ): Promise<HttpResponseInit | undefined> => {
+    // 首先进行 JWT 验证
     const authHeader = req.headers.get("authorization");
     if (!authHeader) {
       return {
@@ -56,19 +57,7 @@ const jwtMiddleware = (secret: string) => {
         username: decoded.username,
         sub: decoded.sub,
       };
-      context.log(
-        `用户认证成功，用户信息:`,
-        JSON.stringify(
-          {
-            sub: decoded.sub,
-            username: decoded.username,
-            iat: decoded.iat,
-            exp: decoded.exp,
-          },
-          null,
-          2
-        )
-      );
+
       return undefined; // 继续执行后续操作
     } catch (error) {
       context.log(`认证失败: ${error.message}`);
