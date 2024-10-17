@@ -43,9 +43,7 @@ jobs:
   deploy:
     runs-on: windows-latest
     needs: build
-    environment:
-      name: 'Production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    
     permissions:
       id-token: write #This is required for requesting the JWT
 
@@ -58,9 +56,9 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_16309963ACF3460C9355288EE2B2E9BB }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_2D99C700459C44C2AF9DD88CFFEC002B }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_CD0044C82A7F44E6B6701D54EB071936 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_F0307F7FEA9D4A8699C2E942AEA1AA3D }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_96295D2064AB4237ABDE90F5C3EA75FE }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_3F0EEB3C365F4BA78AF7A945C4748FD5 }}
 
       - name: 'Run Azure Functions Action'
         uses: Azure/functions-action@v1
