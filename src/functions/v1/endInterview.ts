@@ -1,9 +1,4 @@
-import {
-  app,
-  HttpRequest,
-  HttpResponseInit,
-  InvocationContext,
-} from "@azure/functions";
+import { app, HttpRequest, HttpResponseInit } from "@azure/functions";
 import jwtMiddleware from "../../middlewares/jwtMiddleware";
 import { ResponseUtil } from "../../utils/responseUtil";
 import { InterviewService } from "../../services/interviewService";
@@ -11,7 +6,7 @@ import { container } from "../../di/container";
 import { ERROR_CODES } from "../../config/errorCodes";
 import { rateLimitMiddleware } from "../../middlewares/rateLimitMiddleware";
 import { GENERAL_API_RATE_LIMIT } from "../../config/rateLimit";
-
+import { AuthenticatedContext } from "../../types/authenticatedContext";
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const interviewService = container.resolve(InterviewService);
@@ -28,7 +23,7 @@ const interviewService = container.resolve(InterviewService);
  */
 async function endInterview(
   request: HttpRequest,
-  context: InvocationContext
+  context: AuthenticatedContext
 ): Promise<HttpResponseInit> {
   // 应用 JWT 中间件
   const jwtResult = await jwtMiddleware(JWT_SECRET)(context, request);

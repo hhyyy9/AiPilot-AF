@@ -1,9 +1,4 @@
-import {
-  app,
-  HttpRequest,
-  HttpResponseInit,
-  InvocationContext,
-} from "@azure/functions";
+import { app, HttpRequest, HttpResponseInit } from "@azure/functions";
 import OpenAI from "openai";
 import jwtMiddleware from "../../middlewares/jwtMiddleware";
 import { ResponseUtil } from "../../utils/responseUtil";
@@ -11,6 +6,9 @@ import { InterviewService } from "../../services/interviewService";
 import { UserService } from "../../services/userService";
 import { container } from "../../di/container";
 import { ERROR_CODES } from "../../config/errorCodes";
+import { AuthenticatedContext } from "../../types/authenticatedContext";
+import { rateLimitMiddleware } from "../../middlewares/rateLimitMiddleware";
+import { GENERAL_API_RATE_LIMIT } from "../../config/rateLimit";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -45,12 +43,18 @@ interface RequestBody {
  */
 const httpTrigger = async (
   request: HttpRequest,
-  context: InvocationContext
+  context: AuthenticatedContext
 ): Promise<HttpResponseInit> => {
   // 应用 JWT 中间件
   const jwtResult = await jwtMiddleware(JWT_SECRET)(context, request);
   if (jwtResult) {
     return jwtResult;
+  }
+
+  const rateLimit = rateLimitMiddleware(GENERAL_API_RATE_LIMIT);
+  const rateLimitResult = await rateLimit(context, request);
+  if (rateLimitResult) {
+    return rateLimitResult;
   }
 
   try {

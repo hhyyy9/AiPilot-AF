@@ -14,3 +14,4 @@ export { startInterviewFunction } from "./functions/v1/startInterview";
 export { endInterviewFunction } from "./functions/v1/endInterview";
 export { refreshTokenFunction } from "./functions/v1/refreshToken";
 export { createCheckoutSessionFunction } from "./functions/v1/createCheckoutSession";
+export { uploadCVFunction } from "./functions/v1/uploadCV";

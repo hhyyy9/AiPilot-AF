@@ -13,6 +13,9 @@ interface DecodedToken {
   exp: number;
 }
 
+const TOKEN_EXTENSION = 5 * 60; // 每次调用延长 5 分钟
+const MAX_EXPIRATION_TIME = 24 * 60 * 60; // 最大过期时间为 5 小时
+
 const validateJwt = (token: string, secret: string): Promise<DecodedToken> => {
   return new Promise((resolve, reject) => {
     jwt.verify(token, secret, (err, decoded) => {
@@ -27,10 +30,9 @@ const validateJwt = (token: string, secret: string): Promise<DecodedToken> => {
 
 const jwtMiddleware = (secret: string) => {
   return async (
-    context: InvocationContext,
+    context: AuthenticatedContext, // 使用 AuthenticatedContext
     req: HttpRequest
   ): Promise<HttpResponseInit | undefined> => {
-    // 首先进行 JWT 验证
     const authHeader = req.headers.get("authorization");
     if (!authHeader) {
       return {
@@ -52,10 +54,26 @@ const jwtMiddleware = (secret: string) => {
         };
       }
 
-      (context as AuthenticatedContext).user = {
+      context.user = {
         ...decoded,
         username: decoded.username,
         sub: decoded.sub,
+      };
+
+      // 计算新的过期时间
+      const newExp = Math.min(
+        currentTimestamp + TOKEN_EXTENSION,
+        decoded.iat + MAX_EXPIRATION_TIME
+      );
+      const extendedToken = jwt.sign({ ...decoded, exp: newExp }, secret);
+
+      // 在响应中返回新的 token
+      context.res = {
+        ...context.res,
+        headers: {
+          ...context.res?.headers,
+          "X-New-Token": extendedToken, // 返回新的 token
+        },
       };
 
       return undefined; // 继续执行后续操作

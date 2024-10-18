@@ -11,6 +11,7 @@ import { InterviewService } from "../../services/interviewService";
 import { UserService } from "../../services/userService";
 import { container } from "../../di/container";
 import { ERROR_CODES } from "../../config/errorCodes";
+import { AuthenticatedContext } from "../../types/authenticatedContext";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -45,7 +46,7 @@ interface RequestBody {
  */
 const httpTrigger = async (
   request: HttpRequest,
-  context: InvocationContext
+  context: AuthenticatedContext
 ): Promise<HttpResponseInit> => {
   // 应用 JWT 中间件
   const jwtResult = await jwtMiddleware(JWT_SECRET)(context, request);
