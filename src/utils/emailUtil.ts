@@ -28,7 +28,7 @@ export class EmailUtil {
       subject: "Ai Master Email Verification",
       html: `
         <h3>Thank you for registering for Ai Master</h1>
-        <p>您的验证码是: <strong>${verificationCode}</strong></p>
+        <p>your verification code is: <strong>${verificationCode}</strong></p>
         <p>Please click the link below to verify your email:</p>
         <a href="http://aiia.cc/verify-email?code=${verificationCode}&email=${to}">
           Verify Email
