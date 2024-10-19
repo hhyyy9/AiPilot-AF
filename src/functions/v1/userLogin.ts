@@ -96,6 +96,7 @@ async function userLogin(
       {
         sub: user.id, // 添加 sub 字段，值为用户 ID
         username: user.username,
+        isVerified: user.isVerified, // 添加 isVerified 字段
       },
       JWT_SECRET,
       { expiresIn: "1h" }
@@ -106,6 +107,7 @@ async function userLogin(
       {
         sub: user.id, // 添加 sub 字段，值为用户 ID
         username: user.username,
+        isVerified: user.isVerified, // 添加 isVerified 字段
       },
       REFRESH_SECRET,
       { expiresIn: "7d" }
