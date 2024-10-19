@@ -9,6 +9,7 @@ import { ResponseUtil } from "../../utils/responseUtil";
 import { ERROR_CODES } from "../../config/errorCodes";
 import { rateLimitMiddleware } from "../../middlewares/rateLimitMiddleware";
 import { GENERAL_API_RATE_LIMIT } from "../../config/rateLimit";
+import { translate } from "../../utils/translate"; // 引入 translate 函数
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const REFRESH_SECRET = process.env.REFRESH_SECRET; // 为刷新 token 使用单独的密钥
@@ -37,14 +38,11 @@ async function refreshToken(
   const refreshToken = request.headers.get("x-refresh-token");
 
   if (!refreshToken) {
-    return ResponseUtil.error(
-      "刷新 token 未提供",
-      400,
-      ERROR_CODES.INVALID_INPUT
-    );
+    const message = translate(request, "errorMissingRefreshToken");
+    return ResponseUtil.error(message, 400, ERROR_CODES.INVALID_INPUT);
   }
 
-  // 然后应用速率限制
+  // 应用速率限制
   const rateLimit = rateLimitMiddleware(GENERAL_API_RATE_LIMIT);
   const rateLimitResult = await rateLimit(context, request);
   console.log("rateLimitResult:", rateLimitResult);
@@ -78,12 +76,9 @@ async function refreshToken(
       refreshToken: newRefreshToken,
     });
   } catch (error) {
+    const message = translate(request, "errorInvalidRefreshToken");
     context.log(`刷新 token 失败: ${error.message}`);
-    return ResponseUtil.error(
-      "无效的刷新 token",
-      401,
-      ERROR_CODES.UNAUTHORIZED
-    );
+    return ResponseUtil.error(message, 401, ERROR_CODES.UNAUTHORIZED);
   }
 }
 

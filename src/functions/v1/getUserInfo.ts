@@ -8,6 +8,7 @@ import { ERROR_CODES } from "../../config/errorCodes";
 import { AuthenticatedContext } from "../../types/authenticatedContext";
 import { rateLimitMiddleware } from "../../middlewares/rateLimitMiddleware";
 import { GENERAL_API_RATE_LIMIT } from "../../config/rateLimit";
+import { translate } from "../../utils/translate"; // 引入 translate 函数
 
 const userService = container.resolve(UserService);
 const interviewService = container.resolve(InterviewService);
@@ -42,7 +43,7 @@ const httpTrigger = async (
     return jwtResult;
   }
 
-  // 然后应用速率限制
+  // 应用速率限制
   const rateLimit = rateLimitMiddleware(GENERAL_API_RATE_LIMIT);
   const rateLimitResult = await rateLimit(context, request);
   console.log("rateLimitResult:", rateLimitResult);
@@ -56,7 +57,11 @@ const httpTrigger = async (
     // 获取用户信息
     const user = await userService.getUserById(userId);
     if (!user) {
-      return ResponseUtil.error("用户不存在", 404, ERROR_CODES.USER_NOT_FOUND);
+      return ResponseUtil.error(
+        translate(request, "user_not_found"),
+        404,
+        ERROR_CODES.USER_NOT_FOUND
+      );
     }
 
     // 获取用户的面试信息
@@ -68,14 +73,14 @@ const httpTrigger = async (
       username: user.username,
       credits: user.credits, // 添加用户积分
       isVerified: user.isVerified, // 添加用户验证状态
-      interviews: interviews ? [interviews] : [], // 如果有面试信息，返回数组
+      interviews: interviews ? interviews.slice(0, 5) : [], // 返回最近5条面试信息
     };
 
     return ResponseUtil.success(userInfo);
   } catch (error) {
     context.error("获取用户信息时发生错误", error);
     return ResponseUtil.error(
-      "内部服务器错误",
+      translate(request, "internal_server_error"),
       500,
       ERROR_CODES.INTERNAL_SERVER_ERROR
     );

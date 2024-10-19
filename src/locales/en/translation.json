@@ -1,0 +1,38 @@
+{
+  "welcome": "Welcome to Ai Master!",
+  "email_verification_success": "Email verification successful.",
+  "user_not_found": "User does not exist.",
+  "missing_interviewId": "Missing interviewId.",
+  "no_ongoing_interview": "There is no ongoing interview.",
+  "insufficient_credits": "Insufficient credits, unable to continue the interview. Please recharge on the official website.",
+  "internal_server_error": "Internal server error.",
+
+  "errorMissingParameters": "Missing required parameters.",
+  "errorPaymentIncomplete": "Payment not completed.",
+  "errorUnauthorizedAccess": "Unauthorized to access this order.",
+  "paymentConfirmed": "Payment confirmed successfully, credits have been added.",
+  "errorStripeInvalidRequest": "Invalid request to Stripe.",
+  "errorInternalServer": "Error occurred while creating Checkout Session.",
+
+  "errorMissingUserId": "Missing userId.",
+  "interviewEnded": "Interview ended.",
+  "interviewDuration": "Duration: {{duration}} minutes.",
+  "errorMissingRefreshToken": "Refresh token not provided.",
+  "errorInvalidRefreshToken": "Invalid refresh token.",
+
+  "interviewStarted": "Interview has started.",
+  "errorOngoingInterview": "You already have an ongoing interview. Please end the current interview before starting a new one.",
+
+  "no_file_uploaded": "No file uploaded.",
+  "file_size_exceeds_limit": "File size exceeds the maximum limit of 5MB.",
+  "unsupported_file_type": "Unsupported file type. Supported types are: {{types}}.",
+  "file_upload_failed": "File upload or processing failed.",
+
+  "username_or_password_incorrect": "Username or password is incorrect.",
+  "username_already_exists": "Username already exists.",
+  "username_or_password_required": "Username and password are required.",
+  "user_register_success": "User register successfully.",
+  "missing_verification_code_or_email": "Missing verification code or email.",
+  "invalid_verification_code": "Invalid verification code.",
+  "email_verified_successfully": "Email verified successfully."
+}

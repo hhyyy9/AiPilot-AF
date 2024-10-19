@@ -1,0 +1,38 @@
+{
+  "welcome": "欢迎使用 Ai Master！",
+  "email_verification_success": "邮箱验证成功。",
+  "user_not_found": "用户不存在。",
+  "missing_interviewId": "缺少 interviewId。",
+  "no_ongoing_interview": "当前没有正在进行的面试。",
+  "insufficient_credits": "积分不足，无法继续面试，请到官方网站充值。",
+  "internal_server_error": "内部服务器错误。",
+
+  "errorMissingParameters": "缺少必要参数。",
+  "errorPaymentIncomplete": "支付未完成。",
+  "errorUnauthorizedAccess": "无权访问此订单。",
+  "paymentConfirmed": "支付确认成功，积分已添加。",
+  "errorStripeInvalidRequest": "Stripe 请求无效。",
+  "errorInternalServer": "创建 Checkout Session 时发生错误。",
+
+  "errorMissingUserId": "缺少 userId。",
+  "interviewEnded": "面试结束。",
+  "interviewDuration": "持续时间：{{duration}} 分钟。",
+  "errorMissingRefreshToken": "刷新 token 未提供。",
+  "errorInvalidRefreshToken": "无效的刷新 token。",
+
+  "interviewStarted": "面试已开始。",
+  "errorOngoingInterview": "您已有一个正在进行的面试，请先结束当前面试再开始新的面试。",
+
+  "no_file_uploaded": "未上传文件。",
+  "file_size_exceeds_limit": "文件大小超过最大限制 5MB。",
+  "unsupported_file_type": "不支持的文件类型。支持的类型有：{{types}}。",
+  "file_upload_failed": "文件上传或处理失败。",
+
+  "username_or_password_incorrect": "用户名或密码不正确。",
+  "username_already_exists": "用户名已存在。",
+  "username_or_password_required": "用户名和密码是必需的。",
+  "user_register_success": "用户注册成功。",
+  "missing_verification_code_or_email": "缺少验证码或邮箱地址。",
+  "invalid_verification_code": "验证码无效。",
+  "email_verified_successfully": "邮箱验证成功。"
+}

@@ -7,6 +7,7 @@ import WordExtractor from "word-extractor";
 import pdfParse from "pdf-parse";
 import { ResponseUtil } from "../../utils/responseUtil";
 import { ERROR_CODES } from "../../config/errorCodes";
+import { translate } from "../../utils/translate";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -27,9 +28,9 @@ async function processFile(
     try {
       const data = await pdfParse(fileBuffer);
       return data.text;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error processing PDF:", error);
-      throw new Error(`PDF processing failed: ${error.message}`);
+      throw new Error(`errorInternalServer`);
     }
   } else if (
     mimeType ===
@@ -40,14 +41,14 @@ async function processFile(
       const extractor = new WordExtractor();
       const extracted = await extractor.extract(fileBuffer);
       return extracted.getBody();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error processing Word document:", error);
-      throw new Error(`Word document processing failed: ${error.message}`);
+      throw new Error(`errorInternalServer`);
     }
   } else if (mimeType === "text/plain") {
     return fileBuffer.toString("utf-8");
   } else {
-    throw new Error(`Unsupported file type: ${mimeType}`);
+    throw new Error(`unsupportedFileType`);
   }
 }
 
@@ -71,11 +72,8 @@ const uploadCV = async (
     const file = formData.get("file") as unknown as File;
 
     if (!file) {
-      return ResponseUtil.error(
-        "No file uploaded",
-        400,
-        ERROR_CODES.INVALID_INPUT
-      );
+      const message = translate(request, "no_file_uploaded");
+      return ResponseUtil.error(message, 400, ERROR_CODES.INVALID_INPUT);
     }
 
     const fileBuffer = Buffer.from(await file.arrayBuffer());
@@ -88,30 +86,30 @@ const uploadCV = async (
     console.log("MIME type:", mimeType);
 
     if (fileSize > MAX_FILE_SIZE) {
-      return ResponseUtil.error(
-        `File size exceeds the maximum limit of 5MB`,
-        400,
-        ERROR_CODES.INVALID_INPUT
-      );
+      const message = translate(request, "file_size_exceeds_limit");
+      return ResponseUtil.error(message, 400, ERROR_CODES.INVALID_INPUT);
     }
 
     if (!SUPPORTED_MIME_TYPES.includes(mimeType)) {
-      return ResponseUtil.error(
-        `Unsupported file type. Supported types are: ${SUPPORTED_MIME_TYPES.join(
-          ", "
-        )}`,
-        400,
-        ERROR_CODES.INVALID_INPUT
-      );
+      const message = translate(request, "unsupported_file_type", {
+        types: SUPPORTED_MIME_TYPES.join(", "),
+      });
+      return ResponseUtil.error(message, 400, ERROR_CODES.INVALID_INPUT);
     }
 
     const fileContent = await processFile(fileBuffer, mimeType);
 
     return ResponseUtil.success({ fileContent });
-  } catch (error) {
+  } catch (error: any) {
     context.error("Error in uploadCV:", error);
+    let message = translate(request, "file_upload_failed");
+    if (error.message === "unsupportedFileType") {
+      message = translate(request, "unsupported_file_type");
+    } else if (error.message === "errorInternalServer") {
+      message = translate(request, "internal_server_error");
+    }
     return ResponseUtil.error(
-      `File upload or processing failed: ${error.message}`,
+      `${message}: ${error.message}`,
       500,
       ERROR_CODES.INTERNAL_SERVER_ERROR
     );

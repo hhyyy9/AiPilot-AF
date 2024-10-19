@@ -9,6 +9,7 @@ import { UserService } from "../../services/userService";
 import { container } from "../../di/container";
 import { ERROR_CODES } from "../../config/errorCodes";
 import { EmailUtil } from "../../utils/emailUtil";
+import { translate } from "../../utils/translate";
 
 const userService = container.resolve(UserService);
 const emailUtil = container.resolve(EmailUtil);
@@ -39,7 +40,7 @@ async function userRegister(
     const existingUser = await userService.getUserByUsername(username);
     if (existingUser) {
       return ResponseUtil.error(
-        "用户名已存在",
+        translate(request, "username_already_exists"),
         409,
         ERROR_CODES.USERNAME_ALREADY_EXISTS
       );
@@ -47,7 +48,7 @@ async function userRegister(
 
     if (!username || !password) {
       return ResponseUtil.error(
-        "用户名和密码是必需的",
+        translate(request, "username_or_password_required"),
         400,
         ERROR_CODES.INVALID_INPUT
       );
@@ -56,11 +57,14 @@ async function userRegister(
     const user = await userService.createUser(username, password);
     emailUtil.sendVerificationEmail(user.username, user.verificationCode);
 
-    return ResponseUtil.success({ message: "用户注册成功" }, 201);
+    return ResponseUtil.success(
+      { message: translate(request, "user_register_success") },
+      201
+    );
   } catch (error) {
     context.error("注册用户时发生错误", error);
     return ResponseUtil.error(
-      "内部服务器错误",
+      translate(request, "internal_server_error"),
       500,
       ERROR_CODES.INTERNAL_SERVER_ERROR
     );

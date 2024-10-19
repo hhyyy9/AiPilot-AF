@@ -12,6 +12,7 @@ import { UserService } from "../../services/userService";
 import { container } from "../../di/container";
 import { ERROR_CODES } from "../../config/errorCodes";
 import { AuthenticatedContext } from "../../types/authenticatedContext";
+import { translate } from "../../utils/translate";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -61,7 +62,7 @@ const httpTrigger = async (
 
     if (!interviewId) {
       return ResponseUtil.error(
-        "缺少 interviewId",
+        translate(request, "missing_interviewId"),
         400,
         ERROR_CODES.INVALID_INPUT
       );
@@ -72,7 +73,7 @@ const httpTrigger = async (
     );
     if (!ongoingInterview) {
       return ResponseUtil.error(
-        "当前没有正在进行的面试",
+        translate(request, "no_ongoing_interview"),
         400,
         ERROR_CODES.INTERVIEW_NOT_FOUND
       );
@@ -80,12 +81,16 @@ const httpTrigger = async (
 
     const user = await userService.getUserById(ongoingInterview.userId);
     if (!user) {
-      return ResponseUtil.error("用户不存在", 404, ERROR_CODES.USER_NOT_FOUND);
+      return ResponseUtil.error(
+        translate(request, "user_not_found"),
+        404,
+        ERROR_CODES.USER_NOT_FOUND
+      );
     }
 
     if (user.credits <= 0) {
       return ResponseUtil.error(
-        "积分不足，无法继续面试",
+        translate(request, "insufficient_credits"),
         403,
         ERROR_CODES.INSUFFICIENT_CREDITS
       );
@@ -130,7 +135,7 @@ const httpTrigger = async (
   } catch (error) {
     context.error("处理请求时发生错误", error);
     return ResponseUtil.error(
-      "内部服务器错误",
+      translate(request, "internal_server_error"),
       500,
       ERROR_CODES.INTERNAL_SERVER_ERROR
     );

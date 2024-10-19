@@ -7,6 +7,8 @@ import { ERROR_CODES } from "../../config/errorCodes";
 import { rateLimitMiddleware } from "../../middlewares/rateLimitMiddleware";
 import { GENERAL_API_RATE_LIMIT } from "../../config/rateLimit";
 import { AuthenticatedContext } from "../../types/authenticatedContext";
+import { translate } from "../../utils/translate"; // 引入 translate 函数
+
 const JWT_SECRET = process.env.JWT_SECRET;
 
 const interviewService = container.resolve(InterviewService);
@@ -31,7 +33,7 @@ async function endInterview(
     return jwtResult;
   }
 
-  // 然后应用速率限制
+  // 应用速率限制中间件
   const rateLimit = rateLimitMiddleware(GENERAL_API_RATE_LIMIT);
   const rateLimitResult = await rateLimit(context, request);
   console.log("rateLimitResult:", rateLimitResult);
@@ -44,29 +46,29 @@ async function endInterview(
     const { userId } = body;
 
     if (!userId) {
-      return ResponseUtil.error("缺少 userId", 400, ERROR_CODES.INVALID_INPUT);
+      const message = translate(request, "errorMissingUserId");
+      return ResponseUtil.error(message, 400, ERROR_CODES.INVALID_INPUT);
     }
 
     const endedInterview = await interviewService.endInterviewByUserId(userId);
     if (!endedInterview) {
-      return ResponseUtil.error(
-        "没有找到进行中的面试",
-        400,
-        ERROR_CODES.INTERVIEW_NOT_FOUND
-      );
+      const message = translate(request, "no_ongoing_interview");
+      return ResponseUtil.error(message, 400, ERROR_CODES.INTERVIEW_NOT_FOUND);
     }
 
+    const successMessage = translate(request, "interviewEnded");
+    const durationMessage = translate(request, "interviewDuration", {
+      duration: endedInterview.duration,
+    });
+
     return ResponseUtil.success({
-      message: "面试结束",
-      duration: `${endedInterview.duration} 分钟`,
+      message: successMessage,
+      duration: durationMessage,
     });
   } catch (error) {
     context.error("结束面试时发生错误", error);
-    return ResponseUtil.error(
-      "内部服务器错误",
-      500,
-      ERROR_CODES.INTERNAL_SERVER_ERROR
-    );
+    const message = translate(request, "internal_server_error");
+    return ResponseUtil.error(message, 500, ERROR_CODES.INTERNAL_SERVER_ERROR);
   }
 }
 

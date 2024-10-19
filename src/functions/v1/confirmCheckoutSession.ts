@@ -9,6 +9,7 @@ import { rateLimitMiddleware } from "../../middlewares/rateLimitMiddleware";
 import { GENERAL_API_RATE_LIMIT } from "../../config/rateLimit";
 import { OrderService } from "../../services/orderService";
 import { UserService } from "../../services/userService";
+import { translate } from "../../utils/translate"; // 引入翻译函数
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2024-09-30.acacia",
@@ -42,17 +43,20 @@ async function confirmCheckoutSession(
     const userId = context.user.sub;
 
     if (!sessionId) {
-      return ResponseUtil.error("缺少必要参数", 400, ERROR_CODES.INVALID_INPUT);
+      const message = translate(request, "errorMissingParameters");
+      return ResponseUtil.error(message, 400, ERROR_CODES.INVALID_INPUT);
     }
 
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
     if (session.payment_status !== "paid") {
-      return ResponseUtil.error("支付未完成", 400, ERROR_CODES.PAYMENT_FAILED);
+      const message = translate(request, "errorPaymentIncomplete");
+      return ResponseUtil.error(message, 400, ERROR_CODES.PAYMENT_FAILED);
     }
 
     if (session.client_reference_id !== userId) {
-      return ResponseUtil.error("无权访问此订单", 403, ERROR_CODES.FORBIDDEN);
+      const message = translate(request, "errorUnauthorizedAccess");
+      return ResponseUtil.error(message, 403, ERROR_CODES.FORBIDDEN);
     }
 
     const updatedOrder = await orderService.updateOrderByStripeSessionId(
@@ -78,8 +82,9 @@ async function confirmCheckoutSession(
     }
     const updatedUser = await userService.addCredits(userId, credits);
 
+    const successMessage = translate(request, "paymentConfirmed");
     return ResponseUtil.success({
-      message: "支付确认成功，积分已添加",
+      message: successMessage,
       orderId: updatedOrder.id,
       credits: credits,
       totalCredits: updatedUser.credits,
@@ -87,10 +92,12 @@ async function confirmCheckoutSession(
   } catch (error) {
     context.error("确认 Checkout Session 时发生错误", error);
     if (error.type === "StripeInvalidRequestError") {
-      return ResponseUtil.error(error.message, 400, ERROR_CODES.INVALID_INPUT);
+      const message = translate(request, "errorStripeInvalidRequest");
+      return ResponseUtil.error(message, 400, ERROR_CODES.INVALID_INPUT);
     }
+    const internalErrorMessage = translate(request, "internalServerError");
     return ResponseUtil.error(
-      "内部服务器错误",
+      internalErrorMessage,
       500,
       ERROR_CODES.INTERNAL_SERVER_ERROR
     );

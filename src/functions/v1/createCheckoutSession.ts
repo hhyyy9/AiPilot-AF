@@ -8,6 +8,7 @@ import { ERROR_CODES } from "../../config/errorCodes";
 import { rateLimitMiddleware } from "../../middlewares/rateLimitMiddleware";
 import { GENERAL_API_RATE_LIMIT } from "../../config/rateLimit";
 import { OrderService } from "../../services/orderService";
+import { translate } from "../../utils/translate"; // 引入 translate 函数
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2024-09-30.acacia",
@@ -62,7 +63,11 @@ async function createCheckoutSession(
     const userId = context.user.sub;
 
     if (!priceId || !successUrl || !cancelUrl) {
-      return ResponseUtil.error("缺少必要参数", 400, ERROR_CODES.INVALID_INPUT);
+      return ResponseUtil.error(
+        translate(request, "errorMissingParameters"),
+        400,
+        ERROR_CODES.INVALID_INPUT
+      );
     }
 
     const price = await stripe.prices.retrieve(priceId);
@@ -112,13 +117,17 @@ async function createCheckoutSession(
       amount: session.amount_total,
       currency: session.currency,
     });
-  } catch (error) {
-    context.error("创建 Checkout Session 时发生错误", error);
+  } catch (error: any) {
+    context.error(translate(request, "errorInternalServer"), error);
     if (error.type === "StripeInvalidRequestError") {
-      return ResponseUtil.error(error.message, 400, ERROR_CODES.INVALID_INPUT);
+      return ResponseUtil.error(
+        translate(request, "errorStripeInvalidRequest"),
+        400,
+        ERROR_CODES.INVALID_INPUT
+      );
     }
     return ResponseUtil.error(
-      "内部服务器错误",
+      translate(request, "internal_server_error"),
       500,
       ERROR_CODES.INTERNAL_SERVER_ERROR
     );

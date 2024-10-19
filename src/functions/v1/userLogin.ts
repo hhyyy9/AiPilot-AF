@@ -9,6 +9,7 @@ import { ResponseUtil } from "../../utils/responseUtil";
 import { UserService } from "../../services/userService";
 import { container } from "../../di/container";
 import { ERROR_CODES } from "../../config/errorCodes";
+import { translate } from "../../utils/translate";
 
 const userService = container.resolve(UserService);
 
@@ -67,7 +68,7 @@ async function userLogin(
 
     if (!username || !password) {
       return ResponseUtil.error(
-        "用户名和密码是必需的",
+        translate(request, "username_or_password_incorrect"),
         400,
         ERROR_CODES.INVALID_INPUT
       );
@@ -76,7 +77,7 @@ async function userLogin(
     const user = await userService.getUserByUsername(username);
     if (!user) {
       return ResponseUtil.error(
-        "用户名或密码不正确",
+        translate(request, "username_or_password_incorrect"),
         401,
         ERROR_CODES.INVALID_CREDENTIALS
       );
@@ -85,7 +86,7 @@ async function userLogin(
     const isPasswordValid = await userService.validatePassword(user, password);
     if (!isPasswordValid) {
       return ResponseUtil.error(
-        "用户名或密码不正确",
+        translate(request, "username_or_password_incorrect"),
         401,
         ERROR_CODES.INVALID_CREDENTIALS
       );
@@ -121,7 +122,7 @@ async function userLogin(
   } catch (error) {
     context.error("登录时发生错误", error);
     return ResponseUtil.error(
-      "内部服务器错误",
+      translate(request, "internal_server_error"),
       500,
       ERROR_CODES.INTERNAL_SERVER_ERROR
     );

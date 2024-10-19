@@ -7,6 +7,7 @@ import { AuthenticatedContext } from "../../types/authenticatedContext";
 import { ERROR_CODES } from "../../config/errorCodes";
 import { rateLimitMiddleware } from "../../middlewares/rateLimitMiddleware";
 import { GENERAL_API_RATE_LIMIT } from "../../config/rateLimit";
+import { translate } from "../../utils/translate";
 
 interface StartInterviewRequest {
   positionName: string;
@@ -36,7 +37,7 @@ async function startInterview(
     return jwtResult;
   }
 
-  // 然后应用速率限制
+  // 应用速率限制
   const rateLimit = rateLimitMiddleware(GENERAL_API_RATE_LIMIT);
   const rateLimitResult = await rateLimit(context, request);
   console.log("rateLimitResult:", rateLimitResult);
@@ -74,14 +75,16 @@ async function startInterview(
     );
     console.log("createdInterview:", createdInterview);
 
+    const successMessage = translate(request, "interviewStarted");
     return ResponseUtil.success({
-      message: "面试已开始",
+      message: successMessage,
       interviewId: createdInterview.id,
     });
   } catch (error) {
     context.error("开始面试时发生错误", error);
+    const errorMessage = translate(request, "errorInternalServer");
     return ResponseUtil.error(
-      error.message,
+      errorMessage,
       500,
       ERROR_CODES.INTERNAL_SERVER_ERROR
     );
