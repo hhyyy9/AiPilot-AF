@@ -8,6 +8,8 @@ export interface User {
   username: string;
   password: string;
   credits: number;
+  verificationCode: string;
+  isVerified: boolean;
 }
 
 @injectable()
@@ -20,9 +22,25 @@ export class UserService {
     this.container = this.databaseService.getContainer("users");
   }
 
+  private generateVerificationCode(): string {
+    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let result = "";
+    for (let i = 0; i < 6; i++) {
+      const randomIndex = Math.floor(Math.random() * characters.length);
+      result += characters[randomIndex];
+    }
+    return result;
+  }
+
   async createUser(username: string, password: string): Promise<User> {
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser: User = { username, password: hashedPassword, credits: 30 };
+    const newUser: User = {
+      username,
+      password: hashedPassword,
+      credits: 30,
+      verificationCode: this.generateVerificationCode(),
+      isVerified: false,
+    };
     const { resource: createdUser } = await this.container.items.create(
       newUser
     );
@@ -87,6 +105,13 @@ export class UserService {
     user.credits += credits;
     const { resource: updatedUser } = await this.container
       .item(userId, userId)
+      .replace(user);
+    return updatedUser;
+  }
+
+  async updateUserVerified(user: User): Promise<User> {
+    const { resource: updatedUser } = await this.container
+      .item(user.id, user.id)
       .replace(user);
     return updatedUser;
   }

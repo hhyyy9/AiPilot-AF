@@ -44,6 +44,8 @@ async function startInterview(
     return rateLimitResult;
   }
 
+  console.log("startInterview:", request);
+
   try {
     const body = (await request.json()) as StartInterviewRequest;
     const { positionName, resumeUrl } = body;
@@ -53,6 +55,7 @@ async function startInterview(
       return ResponseUtil.error("缺少必要参数", 400, ERROR_CODES.INVALID_INPUT);
     }
 
+    /**
     const ongoingInterview = await interviewService.getOngoingInterviewByUserId(
       userId
     );
@@ -62,14 +65,14 @@ async function startInterview(
         400,
         ERROR_CODES.INTERVIEW_ALREADY_STARTED
       );
-    }
+    } */
 
     const createdInterview = await interviewService.startInterview(
       userId,
       positionName,
       resumeUrl
     );
-    console.log(createdInterview);
+    console.log("createdInterview:", createdInterview);
 
     return ResponseUtil.success({
       message: "面试已开始",

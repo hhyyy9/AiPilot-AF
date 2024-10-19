@@ -8,8 +8,10 @@ import { ResponseUtil } from "../../utils/responseUtil";
 import { UserService } from "../../services/userService";
 import { container } from "../../di/container";
 import { ERROR_CODES } from "../../config/errorCodes";
+import { EmailUtil } from "../../utils/emailUtil";
 
 const userService = container.resolve(UserService);
+const emailUtil = container.resolve(EmailUtil);
 
 interface RegisterRequest {
   username: string;
@@ -51,7 +53,8 @@ async function userRegister(
       );
     }
 
-    await userService.createUser(username, password);
+    const user = await userService.createUser(username, password);
+    emailUtil.sendVerificationEmail(user.username, user.verificationCode);
 
     return ResponseUtil.success({ message: "用户注册成功" }, 201);
   } catch (error) {

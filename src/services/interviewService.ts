@@ -57,6 +57,7 @@ export class InterviewService {
       duration: null,
       state: true,
     };
+    console.log("interviewRecord:", interviewRecord);
 
     const { resource: createdInterview } =
       await this.interviewsContainer.items.create(interviewRecord);

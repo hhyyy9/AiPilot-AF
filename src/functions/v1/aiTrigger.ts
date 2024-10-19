@@ -57,6 +57,7 @@ const httpTrigger = async (
   try {
     const body = (await request.json()) as RequestBody;
     const { interviewId, jobPosition, prompt, language, resumeContent } = body;
+    console.log("aiTrigger:", body);
 
     if (!interviewId) {
       return ResponseUtil.error(
@@ -93,20 +94,20 @@ const httpTrigger = async (
     const messages = [
       {
         role: "system",
-        content: `You are a job candidate in an interview. Answer questions in ${language} based on the provided resume. Your responses should be concise, highlighting only the most relevant points. Be professional and specific, focusing on key achievements and skills.`,
+        content: `You are a job candidate in an interview. Answer questions in ${language} based on the provided resume. Your responses should be detailed and comprehensive, highlighting key achievements, skills, and relevant experiences. Be professional and specific, providing examples where applicable related to my experiences.`,
       },
       {
         role: "user",
-        content: `Job Position: ${jobPosition}\n\nResume content:\n\n${resumeContent}\n\nRemember this information for your responses.`,
+        content: `Job Position: ${jobPosition}\n\nResume content JSON file is:\n\n${resumeContent}\n\nRemember this information for your responses. Please provide a thorough explanation of your qualifications and experiences related to this position.`,
       },
       {
         role: "assistant",
         content:
-          "Understood. I'm ready to provide concise, relevant answers based on the resume.",
+          "Understood. I'm ready to provide detailed and relevant answers based on the resume.",
       },
       {
         role: "user",
-        content: `Interviewer's question: ${prompt}\nProvide a brief, focused answer highlighting key points.`,
+        content: `Interviewer's question: ${prompt}\nPlease provide a clear answer that outlines your qualifications and relevant experience, while being informative but not overly detailed.`,
       },
     ];
 
@@ -116,7 +117,7 @@ const httpTrigger = async (
         role: m.role as "user" | "assistant" | "system",
         content: m.content,
       })),
-      max_tokens: 300,
+      max_tokens: 500, // 增加 max_tokens 的值
     });
 
     // 扣除用户1点积分
