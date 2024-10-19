@@ -14,7 +14,7 @@ interface DecodedToken {
 }
 
 const TOKEN_EXTENSION = 5 * 60; // 每次调用延长 5 分钟
-const MAX_EXPIRATION_TIME = 24 * 60 * 60; // 最大过期时间为 5 小时
+const MAX_EXPIRATION_TIME = 30 * 60 * 60 * 24; // 最大过期时间为 30 天
 
 const validateJwt = (token: string, secret: string): Promise<DecodedToken> => {
   return new Promise((resolve, reject) => {
