@@ -3,6 +3,8 @@ import { injectable, inject } from "tsyringe";
 import { DatabaseService } from "./databaseService";
 import { InterviewService } from "./interviewService";
 import { UserService } from "./userService";
+import { Interview } from "../types/Interview";
+import { PaginatedResponse, PaginationParams } from "../types/Pagination";
 
 @injectable()
 export class InterviewMonitorService {
@@ -19,7 +21,7 @@ export class InterviewMonitorService {
   async checkAndEndInterviews(): Promise<void> {
     const ongoingInterviews = await this.getOngoingInterviews();
 
-    for (const interview of ongoingInterviews) {
+    for (const interview of ongoingInterviews.data) {
       const user = await this.userService.getUserById(interview.userId);
       if (!user) continue;
 
@@ -41,13 +43,43 @@ export class InterviewMonitorService {
     }
   }
 
-  private async getOngoingInterviews(): Promise<any[]> {
+  private async getOngoingInterviews(
+    paginationParams: PaginationParams = { page: 1, limit: 100 }
+  ): Promise<PaginatedResponse<Interview>> {
     const querySpec = {
-      query: "SELECT * FROM c WHERE c.state = true",
+      query:
+        "SELECT * FROM c WHERE c.state = true ORDER BY c.startTime DESC OFFSET @offset LIMIT @limit",
+      parameters: [
+        {
+          name: "@offset",
+          value: (paginationParams.page - 1) * paginationParams.limit,
+        },
+        { name: "@limit", value: paginationParams.limit },
+      ],
     };
-    const { resources } = await this.interviewsContainer.items
-      .query(querySpec)
+
+    const { resources: interviews } = await this.interviewsContainer.items
+      .query<Interview>(querySpec)
       .fetchAll();
-    return resources;
+
+    const countQuerySpec = {
+      query: "SELECT VALUE COUNT(1) FROM c WHERE c.state = true",
+    };
+
+    const { resources: countResult } = await this.interviewsContainer.items
+      .query<number>(countQuerySpec)
+      .fetchAll();
+
+    const total = countResult[0];
+
+    return {
+      data: interviews,
+      pagination: {
+        currentPage: paginationParams.page,
+        totalPages: Math.ceil(total / paginationParams.limit),
+        pageSize: paginationParams.limit,
+        totalItems: total,
+      },
+    };
   }
 }

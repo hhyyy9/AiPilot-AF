@@ -8,19 +8,37 @@ import { ERROR_CODES } from "../../config/errorCodes";
 import { AuthenticatedContext } from "../../types/authenticatedContext";
 import { rateLimitMiddleware } from "../../middlewares/rateLimitMiddleware";
 import { GENERAL_API_RATE_LIMIT } from "../../config/rateLimit";
-import { translate } from "../../utils/translate"; // 引入 translate 函数
+import { translate } from "../../utils/translate";
+import { UserInfoResponse } from "../../types/UserInfoResponse";
+import { parsePaginationParams } from "../../utils/paginationUtils";
 
 const userService = container.resolve(UserService);
 const interviewService = container.resolve(InterviewService);
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-interface UserInfoResponse {
-  username: string;
-  credits: number;
-  isVerified: boolean;
-  interviews: any[];
-}
+// interface Interview {
+//   userId: string;
+//   positionName: string;
+//   resumeUrl: string;
+//   startTime: string;
+//   endTime: string | null;
+//   duration: number | null;
+//   state: boolean;
+// }
+
+// interface UserInfoResponse {
+//   username: string;
+//   credits: number;
+//   isVerified: boolean;
+//   interviews: Interview[];
+//   pagination: {
+//     currentPage: number;
+//     totalPages: number;
+//     pageSize: number;
+//     totalItems: number;
+//   };
+// }
 
 /**
  * @swagger
@@ -28,6 +46,19 @@ interface UserInfoResponse {
  *   get:
  *     summary: 获取用户信息
  *     tags: [User]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: 页码
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: 每页数量
  *     responses:
  *       200:
  *         description: 用户信息和面试信息
@@ -54,7 +85,11 @@ const httpTrigger = async (
   try {
     const userId = context.user.sub;
 
-    // 获取用户信息
+    const paginationParams = parsePaginationParams(
+      request.query.get("page"),
+      request.query.get("limit")
+    );
+
     const user = await userService.getUserById(userId);
     if (!user) {
       return ResponseUtil.error(
@@ -64,16 +99,17 @@ const httpTrigger = async (
       );
     }
 
-    // 获取用户的面试信息
-    const interviews = await interviewService.getOngoingInterviewByUserId(
-      userId
+    const paginatedInterviews = await interviewService.getInterviewsByUserId(
+      userId,
+      paginationParams
     );
 
     const userInfo: UserInfoResponse = {
       username: user.username,
-      credits: user.credits, // 添加用户积分
-      isVerified: user.isVerified, // 添加用户验证状态
-      interviews: interviews ? interviews.slice(0, 5) : [], // 返回最近5条面试信息
+      credits: user.credits,
+      isVerified: user.isVerified,
+      interviews: paginatedInterviews.data,
+      pagination: paginatedInterviews.pagination,
     };
 
     return ResponseUtil.success(userInfo);

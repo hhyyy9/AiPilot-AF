@@ -2,6 +2,8 @@ import { Container } from "@azure/cosmos";
 import { injectable, inject } from "tsyringe";
 import { DatabaseService } from "./databaseService";
 import { UserService } from "./userService";
+import { Interview } from "../types/Interview";
+import { PaginatedResponse, PaginationParams } from "../types/Pagination";
 
 @injectable()
 export class InterviewService {
@@ -14,30 +16,71 @@ export class InterviewService {
     this.interviewsContainer = this.databaseService.getContainer("interviews");
   }
 
-  async getOngoingInterview(interviewId: string): Promise<any> {
+  async getOngoingInterview(interviewId: string): Promise<Interview | null> {
     const { resource: interview } = await this.interviewsContainer
       .item(interviewId, interviewId)
-      .read();
+      .read<Interview>();
     return interview && interview.state ? interview : null;
   }
 
-  async getOngoingInterviewByUserId(userId: string): Promise<any> {
+  async getOngoingInterviewByUserId(userId: string): Promise<Interview | null> {
     const querySpec = {
       query: "SELECT * FROM c WHERE c.userId = @userId AND c.state = true",
       parameters: [{ name: "@userId", value: userId }],
     };
     const { resources } = await this.interviewsContainer.items
-      .query(querySpec)
+      .query<Interview>(querySpec)
       .fetchAll();
-    // console.log("getOngoingInterviewByUserId:", resources);
-    return resources[0];
+    return resources[0] || null;
+  }
+
+  async getInterviewsByUserId(
+    userId: string,
+    { page, limit }: PaginationParams
+  ): Promise<PaginatedResponse<Interview>> {
+    const offset = (page - 1) * limit;
+
+    const querySpec = {
+      query:
+        "SELECT * FROM c WHERE c.userId = @userId ORDER BY c.startTime DESC OFFSET @offset LIMIT @limit",
+      parameters: [
+        { name: "@userId", value: userId },
+        { name: "@offset", value: offset },
+        { name: "@limit", value: limit },
+      ],
+    };
+
+    const { resources: interviews } = await this.interviewsContainer.items
+      .query<Interview>(querySpec)
+      .fetchAll();
+
+    const countQuerySpec = {
+      query: "SELECT VALUE COUNT(1) FROM c WHERE c.userId = @userId",
+      parameters: [{ name: "@userId", value: userId }],
+    };
+
+    const { resources: countResult } = await this.interviewsContainer.items
+      .query<number>(countQuerySpec)
+      .fetchAll();
+
+    const total = countResult[0];
+
+    return {
+      data: interviews,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        pageSize: limit,
+        totalItems: total,
+      },
+    };
   }
 
   async startInterview(
     userId: string,
     positionName: string,
     resumeUrl: string
-  ): Promise<any> {
+  ): Promise<Interview> {
     const user = await this.userService.getUserById(userId);
     if (!user) {
       throw new Error("用户不存在");
@@ -48,7 +91,8 @@ export class InterviewService {
     }
 
     const startTime = new Date();
-    const interviewRecord = {
+    const interviewRecord: Interview = {
+      id: this.generateUUID(),
       userId: userId,
       positionName: positionName,
       resumeUrl: resumeUrl,
@@ -60,11 +104,11 @@ export class InterviewService {
     console.log("interviewRecord:", interviewRecord);
 
     const { resource: createdInterview } =
-      await this.interviewsContainer.items.create(interviewRecord);
+      await this.interviewsContainer.items.create<Interview>(interviewRecord);
     return createdInterview;
   }
 
-  async endInterviewByUserId(userId: string): Promise<any> {
+  async endInterviewByUserId(userId: string): Promise<Interview | null> {
     const ongoingInterview = await this.getOngoingInterviewByUserId(userId);
 
     if (!ongoingInterview) {
@@ -77,7 +121,7 @@ export class InterviewService {
       (endTime.getTime() - startTime.getTime()) / (1000 * 60)
     ); // 向上取整到分钟
 
-    const updatedInterview = {
+    const updatedInterview: Interview = {
       ...ongoingInterview,
       endTime: endTime.toISOString(),
       duration: duration,
@@ -86,8 +130,20 @@ export class InterviewService {
 
     const { resource: endedInterview } = await this.interviewsContainer
       .item(ongoingInterview.id, ongoingInterview.id)
-      .replace(updatedInterview);
+      .replace<Interview>(updatedInterview);
 
     return endedInterview;
+  }
+
+  // 辅助函数，用于生成唯一 ID
+  private generateUUID(): string {
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(
+      /[xy]/g,
+      function (c) {
+        const r = (Math.random() * 16) | 0,
+          v = c === "x" ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+      }
+    );
   }
 }
