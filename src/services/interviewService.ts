@@ -121,18 +121,26 @@ export class InterviewService {
       (endTime.getTime() - startTime.getTime()) / (1000 * 60)
     ); // 向上取整到分钟
 
-    const updatedInterview: Interview = {
+    const updatedInterview = {
       ...ongoingInterview,
       endTime: endTime.toISOString(),
       duration: duration,
-      state: false,
+      state: false
     };
 
-    const { resource: endedInterview } = await this.interviewsContainer
-      .item(ongoingInterview.id, ongoingInterview.id)
-      .replace<Interview>(updatedInterview);
+    console.log("updatedInterview:", updatedInterview);
 
-    return endedInterview;
+    try {
+      const { resource: endedInterview } = await this.interviewsContainer
+        .item(ongoingInterview.id, ongoingInterview.id)
+        .replace<Interview>(updatedInterview);
+      
+      console.log("endedInterview:", endedInterview);
+      return endedInterview;
+    } catch (error) {
+      console.error("更新面试记录失败:", error);
+      throw error;
+    }
   }
 
   // 辅助函数，用于生成唯一 ID
