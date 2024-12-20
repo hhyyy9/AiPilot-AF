@@ -1,0 +1,14 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "NODE_ENV": "development",
+    "COSMOS_CONNECTION_STRING": "AccountEndpoint=https://YOUR_COSMOS_ENDPOINT.documents.azure.com:443/;AccountKey=YOUR_COSMOS_ACCOUNT_KEY;",
+    "COSMOS_ENDPOINT": "https://YOUR_COSMOS_ENDPOINT.azure.com:443/",
+    "JWT_SECRET": "234234234k;l324ipo23434",
+    "OPENAI_API_KEY": "YOUR_OPENAI_API_KEY",
+    "STRIPE_SECRET_KEY": "YOUR_STRIPE_SECRET_KEY",
+    "REFRESH_SECRET": "YOUR_REFRESH_SECRET"
+  }
+}
