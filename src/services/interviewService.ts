@@ -25,7 +25,7 @@ export class InterviewService {
 
   async getOngoingInterviewByUserId(userId: string): Promise<Interview | null> {
     const querySpec = {
-      query: "SELECT * FROM c WHERE c.userId = @userId AND c.state = true",
+      query: "SELECT * FROM c WHERE c.userId = @userId AND c.state = true ORDER BY c.startTime DESC",
       parameters: [{ name: "@userId", value: userId }],
     };
     const { resources } = await this.interviewsContainer.items
